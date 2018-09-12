@@ -231,7 +231,7 @@ struct EventListAll : event_details::EventBase {
 
     AllEvents events;
 };
-#define MAKE_EVENT_LIST(XXX, ...) typedef EventListAll<__VA_ARGS__> XXX
+#define MAKE_EVENT_LIST(XXX, ...) struct XXX : EventListAll<__VA_ARGS__> {}
 
 // *****************************************************************
 // *****************************************************************
@@ -742,11 +742,11 @@ namespace statemachine_detail {
 
 #ifdef __noNames
 #define Make_StateMachine(SMName, ...) \
-struct SMName : StateMachine<__VA_ARGS__> { };
+struct SMName : StateMachine<__VA_ARGS__> { }
 #endif
 #ifdef __useNames
 #define Make_StateMachine(SMName, ...) \
-    struct SMName : StateMachine<__VA_ARGS__> { static const char *name() { return #SMName; }};
+    struct SMName : StateMachine<__VA_ARGS__> { static const char *name() { return #SMName; }}
 #endif
 
 template< typename ... STATEs>
