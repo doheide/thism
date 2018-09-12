@@ -87,6 +87,8 @@ public:
     }
     virtual void logLineEnd() { }
 
+    virtual void sysTickCallback();
+
 protected:
     template<typename A, typename ...As>
     void logLineImpl(A ca, As... c) {
@@ -452,6 +454,9 @@ public:
         hawalBase->log(id);
 #endif
     }
+
+    virtual void decreaseCounter() { }
+
 protected:
     virtual bool checkEventProtection(sys_detail::EventBuffer &cevent, uint16_t cStateId);
 
@@ -907,7 +912,7 @@ public:
     void decreaseCounter() {
         for(uint16_t i=0; i!=SMTimerListT::size; i++) {
             if(smTimerList.timerCounter[i]==1)
-                raiseEventIdByIds(smTimerList.timerEvent[i], smTimerList.timerInitiator[i]);
+                raiseEventIdByIds(smTimerList.timerEvents[i], smTimerList.timerInitiator[i]);
             if(smTimerList.timerCounter[i]>0)
                 smTimerList.timerCounter[i]--;
         }

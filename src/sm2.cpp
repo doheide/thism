@@ -23,6 +23,12 @@ void HAWAL_Base::log(StateIdT id) {
     sys->logStateName(id.id);
 }
 
+void HAWAL_Base::sysTickCallback() {
+    sysTime++;
+
+    sys->decreaseCounter();
+}
+
 void HAWAL_Base::logNumberImpl(uint32_t n, uint8_t digits) {
     char temp[digits+1];
     uint8_t cwp = digits;
