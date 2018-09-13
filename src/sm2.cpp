@@ -1,3 +1,26 @@
+//
+// MIT License
+//
+// Copyright (c) 2018 Dominik Heide
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
 
 #include <sm2.h>
 
@@ -29,6 +52,10 @@ void HAWAL_Base::sysTickCallback() {
     sys->decreaseCounter();
 }
 
+void HAWAL_Base::processEvents() {
+    sys->processEvents();
+}
+
 void HAWAL_Base::logNumberImpl(uint32_t n, uint8_t digits) {
     char temp[digits+1];
     uint8_t cwp = digits;
@@ -51,7 +78,7 @@ SystemBase::SystemBase(HAWAL_Base *_hawal) : hawalBase(_hawal), eventBuffer{} {
 }
 
 void SystemBase::processEvents() {
-    hawalBase->logLine("processEvents(): ");
+    //hawalBase->logLine("processEvents(): ");
 
     // @todo add special treatment for E_Initial -> only process for sending state
     //smSystem_helper::TransitionBufferSys tr;
@@ -66,7 +93,7 @@ void SystemBase::processEvents() {
         for(uint16_t level = maxLevel; level!=0; level--)
             for(uint16_t csi=0; csi!=numberOfStates; csi++)
                 if(isStateActiveBI(csi) && (stateLevels[csi]==level)) {
-                    hawalBase->logLine("active + level: ", (uint16_t) level, " ", StateIdT{csi}, " ", (uint8_t)csi);
+                    //hawalBase->logLine("active + level: ", (uint16_t) level, " ", StateIdT{csi}, " ", (uint8_t)csi);
 
                     for(uint16_t tii=0; tii!=transitionsNumberPerState[csi]; tii++) {
                         TransitionImpl *tics = &(transitions[csi][tii]);
@@ -182,6 +209,15 @@ uint16_t SystemBase::getParentIdBI(uint16_t cstate) {
     return stateParents[cstate];
 }
 
+void SystemBase::decreaseCounter() {
+    for(uint16_t i=0; i!=timerNum; i++) {
+        if(timerCounter[i]==1)
+            raiseEventIdByIds(timerEvents[i], timerInitiator[i]);
+        if(timerCounter[i]>0)
+           timerCounter[i]--;
+    }
+}
+
 void SystemBase::raiseEventIdByIds(uint16_t eventId, uint16_t senderStateId) {
     hawalBase->logLine("!! R ", EventIdT{eventId}, " | ", StateIdT{senderStateId});
 
@@ -249,6 +285,11 @@ void SystemBase::deactivateStateFull(uint16_t curStateId) {
 
     getStateById(curStateId)->onExit();
     isStateActiveSetBI(curStateId, false);
+
+    for(uint16_t i=0; i!=timerNum; i++) {
+        if(timerOwner[i] == curStateId)
+            timerCounter[i] = 0;
+    }
 }
 
 void SystemBase::activateStateAndParentsByIds(uint16_t destState, uint16_t senderState, bool blockActivatedStates) {

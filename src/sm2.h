@@ -1,3 +1,27 @@
+//
+// MIT License
+//
+// Copyright (c) 2018 Dominik Heide
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+
 #ifndef SM2_H
 #define SM2_H
 
@@ -88,6 +112,8 @@ public:
     virtual void logLineEnd() { }
 
     virtual void sysTickCallback();
+
+    void processEvents();
 
 protected:
     template<typename A, typename ...As>
@@ -429,6 +455,12 @@ protected:
     uint16_t *transitionsNumberPerState;
     TransitionImpl **transitions;
 
+    uint16_t timerNum;
+    uint32_t *timerCounter;
+    uint16_t *timerOwner;
+    uint16_t *timerInitiator;
+    uint16_t *timerEvents;
+
 public:
     SystemBase(HAWAL_Base *_hawal);
 
@@ -455,7 +487,7 @@ public:
 #endif
     }
 
-    virtual void decreaseCounter() { }
+    void decreaseCounter();
 
 protected:
     virtual bool checkEventProtection(sys_detail::EventBuffer &cevent, uint16_t cStateId);
@@ -785,6 +817,7 @@ struct SMTimerListTmpl {
 
     static constexpr uint16_t size = sizeof...(SMTIMERs);
     uint32_t timerCounter[size];
+    uint16_t timerOwner[size];
     uint16_t timerInitiator[size];
     uint16_t timerEvents[size];
 
@@ -885,6 +918,12 @@ public:
         transitionsNumberPerState = statesImpl.transitionsNumber;
         transitions = statesImpl.transitions;
 
+        timerNum = SMTimerListT::size;
+        timerCounter = smTimerList.timerCounter;
+        timerEvents = smTimerList.timerEvents;
+        timerInitiator = smTimerList.timerInitiator;
+        timerOwner = smTimerList.timerOwner;
+
         initialSetup();
     }
 
@@ -900,22 +939,14 @@ public:
     template<typename EVENT> void raiseEvent()
     { raiseEventIdByIds(EventListT::template EventId<EVENT>::value, ID_S_Undefined); }
 
-    template<typename TIMER, typename INITIATOR>
+    template<typename TIMER, typename OWNER, typename INITIATOR=OWNER>
     void startTimer(uint32_t time=TIMER::value) {
         SMTimerListT::template timerCheckSender<TIMER, INITIATOR>();
 
         uint16_t id = SMTimerListT::template TimerId<TIMER>::value;
         smTimerList.timerCounter[id] = time+1;
+        smTimerList.timerOwner[id] = StateId<OWNER>::value;
         smTimerList.timerInitiator[id] = StateId<INITIATOR>::value;
-    }
-
-    void decreaseCounter() {
-        for(uint16_t i=0; i!=SMTimerListT::size; i++) {
-            if(smTimerList.timerCounter[i]==1)
-                raiseEventIdByIds(smTimerList.timerEvents[i], smTimerList.timerInitiator[i]);
-            if(smTimerList.timerCounter[i]>0)
-                smTimerList.timerCounter[i]--;
-        }
     }
 };
 
