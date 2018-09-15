@@ -25,38 +25,38 @@
 #include <sm2.h>
 
 
-void HAWAL_Base::log(uint8_t n) {
+void BAHA_Base::log(uint8_t n) {
     logNumberImpl(n, 2);
 }
 
-void HAWAL_Base::log(uint16_t n) {
+void BAHA_Base::log(uint16_t n) {
     logNumberImpl(n, 4);
 
 }
 
-void HAWAL_Base::log(uint32_t n) {
+void BAHA_Base::log(uint32_t n) {
     logNumberImpl(n, 8);
 }
 
-void HAWAL_Base::log(EventIdT id) {
+void BAHA_Base::log(EventIdT id) {
     sys->logEventName(id.id);
 }
 
-void HAWAL_Base::log(StateIdT id) {
+void BAHA_Base::log(StateIdT id) {
     sys->logStateName(id.id);
 }
 
-void HAWAL_Base::sysTickCallback() {
+void BAHA_Base::sysTickCallback() {
     sysTime++;
 
     sys->decreaseCounter();
 }
 
-void HAWAL_Base::processEvents() {
+void BAHA_Base::processEvents() {
     sys->processEvents();
 }
 
-void HAWAL_Base::logNumberImpl(uint32_t n, uint8_t digits) {
+void BAHA_Base::logNumberImpl(uint32_t n, uint8_t digits) {
     char temp[digits+1];
     uint8_t cwp = digits;
     temp[cwp--] = 0;
@@ -72,13 +72,13 @@ void HAWAL_Base::logNumberImpl(uint32_t n, uint8_t digits) {
 }
 
 
-SystemBase::SystemBase(HAWAL_Base *_hawal) : hawalBase(_hawal), eventBuffer{} {
+SystemBase::SystemBase(BAHA_Base *_baha) : bahaBase(_baha), eventBuffer{} {
     eventBufferReadPos = 0;
     eventBufferWritePos = 0;
 }
 
 void SystemBase::processEvents() {
-    //hawalBase->logLine("processEvents(): ");
+    //BAHABase->logLine("processEvents(): ");
 
     // @todo add special treatment for E_Initial -> only process for sending state
     //smSystem_helper::TransitionBufferSys tr;
@@ -88,12 +88,12 @@ void SystemBase::processEvents() {
     //for(uint8_t i=eventBufferReadPos; i != readUntil; i=(i+1)&((1<<EVENT_BUFFER_SIZE_V)-1)) {
         sys_detail::EventBuffer &cevent = eventBuffer[eventBufferReadPos];
 
-        hawalBase->logLine("!! EB ", EventIdT{cevent.event}, " | ", StateIdT{cevent.sender});
+        bahaBase->logLine("!! EB ", EventIdT{cevent.event}, " | ", StateIdT{cevent.sender});
 
         for(uint16_t level = maxLevel; level!=0; level--)
             for(uint16_t csi=0; csi!=numberOfStates; csi++)
                 if(isStateActiveBI(csi) && (stateLevels[csi]==level)) {
-                    //hawalBase->logLine("active + level: ", (uint16_t) level, " ", StateIdT{csi}, " ", (uint8_t)csi);
+                    //BAHABase->logLine("active + level: ", (uint16_t) level, " ", StateIdT{csi}, " ", (uint8_t)csi);
 
                     for(uint16_t tii=0; tii!=transitionsNumberPerState[csi]; tii++) {
                         TransitionImpl *tics = &(transitions[csi][tii]);
@@ -103,7 +103,7 @@ void SystemBase::processEvents() {
                                 StateBase *sb = getStateById(csi);
 
                                 uint16_t &cs = tics->stateId;
-                                hawalBase->logLine("!! T1 ", EventIdT{tics->eventId}, ": ", StateIdT{csi}, " -> ", StateIdT{cs});
+                                bahaBase->logLine("!! T1 ", EventIdT{tics->eventId}, ": ", StateIdT{csi}, " -> ", StateIdT{cs});
 
                                 executeTransition(csi, cs, cevent.sender, cevent.event, true);
 
@@ -219,7 +219,7 @@ void SystemBase::decreaseCounter() {
 }
 
 void SystemBase::raiseEventIdByIds(uint16_t eventId, uint16_t senderStateId) {
-    hawalBase->logLine("!! R ", EventIdT{eventId}, " | ", StateIdT{senderStateId});
+    bahaBase->logLine("!! R ", EventIdT{eventId}, " | ", StateIdT{senderStateId});
 
     eventBuffer[eventBufferWritePos++] = { eventId, senderStateId };
     eventBufferWritePos &= (1<<EVENT_BUFFER_SIZE_V) - 1;
@@ -232,7 +232,7 @@ void SystemBase::executeTransition(uint16_t startState, uint16_t destState, uint
         raiseEventIdByIds(ID_E_FatalError, senderState);
     }
 
-    hawalBase->logLine("!! T ", EventIdT{event}, ": ", StateIdT{startState}, " -> ", StateIdT{destState}, " | ", StateIdT{senderState});
+    bahaBase->logLine("!! T ", EventIdT{event}, ": ", StateIdT{startState}, " -> ", StateIdT{destState}, " | ", StateIdT{senderState});
 
     uint16_t temp, i;
     uint16_t commonState;
@@ -266,7 +266,7 @@ void SystemBase::executeTransition(uint16_t startState, uint16_t destState, uint
 
 void SystemBase::activateStateFullByIds(uint16_t curStateId, uint16_t destStateId, uint16_t senderStateId, bool blockActivatedStates) {
 
-    hawalBase->logLine("!! EN ", StateIdT{curStateId});
+    bahaBase->logLine("!! EN ", StateIdT{curStateId});
 
     isStateActiveSetBI(curStateId, true);
     isStateBlockedSetBI(curStateId, blockActivatedStates);
@@ -281,7 +281,7 @@ void SystemBase::activateStateFullByIds(uint16_t curStateId, uint16_t destStateI
 
 void SystemBase::deactivateStateFull(uint16_t curStateId) {
 
-    hawalBase->logLine("!! EX ", StateIdT{curStateId});
+    bahaBase->logLine("!! EX ", StateIdT{curStateId});
 
     getStateById(curStateId)->onExit();
     isStateActiveSetBI(curStateId, false);

@@ -82,13 +82,13 @@ class SystemBase;
 struct EventIdT { uint16_t id; };
 struct StateIdT { uint16_t id; };
 
-class HAWAL_Base {
+class BAHA_Base {
 protected:
     uint32_t sysTime;
     SystemBase *sys;
 
 public:
-    HAWAL_Base() : sysTime(0) { }
+    BAHA_Base() : sysTime(0) { }
 
     void sysSet(SystemBase *_sys) {
         sys = _sys;
@@ -440,7 +440,7 @@ public:
     uint16_t maxLevel;
 
 protected:
-    HAWAL_Base *hawalBase;
+    BAHA_Base *bahaBase;
 
     sys_detail::EventBuffer eventBuffer[1<<EVENT_BUFFER_SIZE_V];
     uint8_t eventBufferWritePos, eventBufferReadPos;
@@ -462,15 +462,15 @@ protected:
     uint16_t *timerEvents;
 
 public:
-    SystemBase(HAWAL_Base *_hawal);
+    SystemBase(BAHA_Base *_baha);
 
     void processEvents();
 
     virtual void logEventName(uint16_t) { }
 //    virtual void logStateName(uint16_t) { }
 
-    HAWAL_Base *hawalBaseGet() {
-        return hawalBase;
+    BAHA_Base *bahaBaseGet() {
+        return bahaBase;
     }
 
     uint16_t getParentIdBI(uint16_t cstate);
@@ -478,12 +478,12 @@ public:
     virtual void logStateName(uint16_t id) {
 #ifdef __useNames
         if(id==SystemBase::ID_S_Undefined)
-            hawalBase->log("S_Undefined");
+            bahaBase->log("S_Undefined");
         else
-            hawalBase->log(statesBP[id]->name());
+            bahaBase->log(statesBP[id]->name());
 #else
-        hawalBase->log("S_");
-        hawalBase->log(id);
+        bahaBase->log("S_");
+        bahaBase->log(id);
 #endif
     }
 
@@ -839,11 +839,11 @@ template<typename ...>
 class SMSystem;
 
 //template<typename LALA, typename ...SMs>
-template<typename HAWAL_TT, typename EVL, typename ...SMs, typename _SMTimerList>
-class SMSystem<HAWAL_TT, EVL, Collector<SMs...>, _SMTimerList> : public SystemBase {
+template<typename BAHA_TT, typename EVL, typename ...SMs, typename _SMTimerList>
+class SMSystem<BAHA_TT, EVL, Collector<SMs...>, _SMTimerList> : public SystemBase {
 
 public:
-    typedef HAWAL_TT HAWAL_T;
+    typedef BAHA_TT BAHA_T;
 
     typedef SMSystem<SMs...> This;
 
@@ -869,23 +869,12 @@ public:
 
     typedef typename sys_detail::MaxStateLevelC<StatesT>::type MaxStateLevelC_T;
 
-//    virtual void logStateName(uint16_t id) {
-//#ifdef __useNames
-//        if(id==SystemBase::ID_S_Undefined)
-//            hawalBase->log("S_Undefined");
-//        else
-//            hawalBase->log(statesBP[id]->name());
-//#else
-//        hawalBase->log("S_");
-//        hawalBase->log(id);
-//#endif
-//    }
     virtual void logEventName(uint16_t id) {
 #ifdef __useNames
-        hawalBase->log(event_details::getEventName<EventListT>(id));
+        bahaBase->log(event_details::getEventName<EventListT>(id));
 #else
-        hawalBase->log("E_");
-        hawalBase->log(id);
+        bahaBase->log("E_");
+        bahaBase->log(id);
 #endif
     }
 
@@ -896,12 +885,11 @@ protected:
     EventListT eventList;
     SMTimerListT smTimerList;
 
-    HAWAL_T *hawal;
+    BAHA_T *baha;
 
 public:
-    SMSystem(HAWAL_T *_hawal) : SystemBase(_hawal), statesImpl() {
-        hawalBase = _hawal;
-        hawalBase->sysSet(this);
+    SMSystem(BAHA_T *_baha) : SystemBase(_baha), statesImpl() {
+        bahaBase->sysSet(this);
 
         numberOfStates = numberOfStatesT::value;
 
@@ -960,6 +948,7 @@ public:
 #include <QFile>
 #include <QTextStream>
 #include <QVector>
+#include <QDir>
 #include <iostream>
 
 
@@ -990,7 +979,7 @@ QString make_treeuml(SYS *sys) {
 #ifndef __useDescription
     static_assert(false, "define switch __useDescription has to be activated.");
 #endif
-    HAWAL_Base *hawal = sys->hawalBaseGet();
+    BAHA_Base *baha = sys->bahaBaseGet();
 
     QString stateUML[SYS::numberOfStatesT::value];
     QString out;
@@ -1002,7 +991,7 @@ QString make_treeuml(SYS *sys) {
     for(uint8_t cl = sys_detail::MaxStateLevelC<typename SYS::StatesT>::type::value; cl > 0; cl--) {
         for(uint16_t cs=0; cs!=SYS::numberOfStatesT::value; cs++) {
             if((sll.stateLevel[cs] == cl) && (sls.ids.contains(cs))) {
-                hawal->logLine("Level: ", (uint8_t) cl, ": ", StateIdT{cs});
+                baha->logLine("Level: ", (uint8_t) cl, ": ", StateIdT{cs});
 
                 uint16_t pid = sys->getParentIdBI(cs);
 
@@ -1078,6 +1067,8 @@ namespace helper {
 template <typename SYS>
 void make_treeuml_allSMs(SYS *sys, const char *path) {
     helper::Make_Treeuml_allSMs_impl<SYS, typename SYS::SMsT> mtu;
+
+    QDir::current().mkpath(path);
 
     QString pngs = mtu(sys, path);
 

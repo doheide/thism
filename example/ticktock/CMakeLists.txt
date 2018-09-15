@@ -21,11 +21,11 @@ set(ticktock_SRCS
 
 add_library(thistam STATIC ../../src/sm2.cpp)
 target_link_libraries(thistam Qt5::Core )
-add_library(thistam_hawal STATIC ../../src/hawal_qt.cpp)
-target_link_libraries(thistam_hawal Qt5::Core )
+add_library(thistam_baha STATIC ../../src/baha_qt.cpp)
+target_link_libraries(thistam_baha Qt5::Core )
 
 # Tell CMake to create the executable
 add_executable(${PROJECT_NAME} ${ticktock_SRCS})
 
 # Use the Widgets module from Qt 5
-target_link_libraries(${PROJECT_NAME} Qt5::Core thistam thistam_hawal)
+target_link_libraries(${PROJECT_NAME} Qt5::Core thistam thistam_baha)

@@ -43,9 +43,11 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    HAWAL_qt hawal;
-    SMSys sys(&hawal);
+    BAHA_qt BAHA;
+    SMSys sys(&BAHA);
     smsys = &sys;
+
+    make_treeuml_allSMs(smsys, "out");
 
     return a.exec();
 }
