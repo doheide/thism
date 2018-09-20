@@ -704,7 +704,6 @@ namespace sys_detail {
 
 // **********************************************************************************************************************
 // **********************************************************************************************************************
-// ??? # define MYLOG(FormatLiteral, ...)  fprintf (stderr, "%s(%u): " FormatLiteral "\n", __FILE__, __LINE__, __VA_ARGS__)
 
 namespace statemachine_detail {
     template<typename ... > struct CheckTransitionsEvent;
@@ -951,7 +950,6 @@ public:
 #include <QDir>
 #include <iostream>
 
-
 namespace helper {
     template <typename ...>
     struct StateLevelList;
@@ -1033,7 +1031,6 @@ QString make_treeuml(SYS *sys) {
     return out;
 }
 
-
 namespace helper {
 
     template<typename ...>
@@ -1087,7 +1084,6 @@ void make_treeuml_allSMs(SYS *sys, const char *path) {
     QTextStream out(&file);
     out << makefile;
 }
-
 
 #endif
 
