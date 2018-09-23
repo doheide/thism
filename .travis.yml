@@ -11,5 +11,8 @@ install:
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
 
 script:
+  - cd gtest && mkdir build && cd build
+  - cmake .. && make
+  - cd ../..
   - qmake
   - make
