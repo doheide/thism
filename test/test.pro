@@ -1,6 +1,6 @@
 include(gtest_dependency.pri)
 
-GOOGLETEST_DIR = ../gtest/lib/usr/local/
+GOOGLETEST_DIR = ../googletest/lib/usr/local/
 
 QT += core
 
