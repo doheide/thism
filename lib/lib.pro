@@ -4,7 +4,8 @@ VERSION = 1.0.0
 
 CONFIG += thismBuildShared
 
-QT += core 
+QT += core
+CONFIG += c++11
 
 thismBuildShared {
 	CONFIG += shared
