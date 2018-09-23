@@ -22,7 +22,7 @@
 // SOFTWARE.
 //
 
-#include <sm2.h>
+#include <thism/sm2.h>
 
 
 void BAHA_Base::log(uint8_t n) {
@@ -186,20 +186,20 @@ bool SystemBase::checkEventProtection(sys_detail::EventBuffer &cevent, uint16_t 
 }
 
 bool SystemBase::isStateActiveBI(uint16_t cstate) {
-    if(cstate==SystemBase::ID_S_Undefined) return 0;
+    if(cstate>=SystemBase::ID_S_Undefined) return 0;
     return (stateFlags[cstate]&1)==1;
 }
 void SystemBase::isStateActiveSetBI(uint16_t cstate, bool v) {
-    if(cstate==SystemBase::ID_S_Undefined) return; // @todo raise fatal error
+    if(cstate>=SystemBase::ID_S_Undefined) return; // @todo raise fatal error
     if(v) stateFlags[cstate] |= 1;
     else  stateFlags[cstate] &= ~1;
 }
 bool SystemBase::isStateBlockedBI(uint16_t cstate) {
-    if(cstate==SystemBase::ID_S_Undefined) return 0;
+    if(cstate>=SystemBase::ID_S_Undefined) return 0;
     return (stateFlags[cstate]&1)==2;
 }
 void SystemBase::isStateBlockedSetBI(uint16_t cstate, bool v) {
-    if(cstate==SystemBase::ID_S_Undefined) return; // @todo raise fatal error
+    if(cstate>=SystemBase::ID_S_Undefined) return; // @todo raise fatal error
     if(v) stateFlags[cstate] |= 2;
     else  stateFlags[cstate] &= ~2;
 }

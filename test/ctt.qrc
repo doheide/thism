@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/ctt">
+        <file>compile_time_tests/test_event.cpp</file>
+        <file>compile_time_tests/test_state_invalid_type.cpp</file>
+        <file>compile_time_tests/test_state_no_initial.cpp</file>
+        <file>compile_time_tests/test_state_missing.cpp</file>
+        <file>compile_time_tests/test_event_missing.cpp</file>
+        <file>compile_time_tests/test_state_duplicate_in_sm.cpp</file>
+        <file>compile_time_tests/test_state_duplicate_in_sys.cpp</file>
+    </qresource>
+</RCC>

@@ -30,7 +30,7 @@
 
 
 // *****************************************************************
-#define __make_treeuml
+//#define __make_treeuml
 
 // *****************************************************************
 // *****************************************************************
@@ -73,7 +73,7 @@ static_assert(false, "SM: If '__useDescription' is active '__useNames' have also
 
 // ******************************************************************
 // ******************************************************************
-#include <sm2_base.h>
+#include <thism/sm2_base.h>
 
 // ******************************************************************
 // ******************************************************************
@@ -176,12 +176,12 @@ namespace event_details {
     template<typename X>
     struct EventConceptCheck {
         static_assert(detail::has_type_details<X>::value,
-                      "SM: 1 Event struct has to be have a member ::details of the type EventBase.");
+                      "CTC: Event struct has to be have a member ::details of the type EventBase.");
         static_assert(std::is_same<EventBase, typename X::details>::value,
-                      "SM: 3 Event struct has to be have a member ::details of the type EventBase.");
+                      "CTC: Event struct has to be have a member ::details of the type EventBase.");
 #ifdef __useNames
 //        static_assert(detail::has_static_name<X>::value,
-//                      "SM: 2 Event struct has to be have a member static method named ::name returning const char*.");
+//                      "CTC Event struct has to be have a member static method named ::name returning const char*.");
 #endif
         static constexpr auto value = std::true_type();
     };
@@ -269,11 +269,11 @@ namespace state_details {
     template<typename X>
     struct StateConceptCheck {
         static_assert(detail::has_type_details<X>::value,
-                      "SM: State struct has to be have a member ::details specialized from StateDetails.");
+                      "CTC: State struct has to have a member ::details specialized from StateDetails.");
         static_assert(detail::has_type_details_TransitionsT<X>::value,
-                      "SM: State struct has to be have a member ::transitions of the type StateBase.");
+                      "CTC: State struct has to have a member ::transitions of the type StateBase.");
         static_assert(std::is_base_of<StateBase, X>::value,
-                      "SM: State struct has to be have a member ::details of the type StateBase.");
+                      "CTC: State struct has to have a member ::details of the type StateBase.");
 
         static constexpr auto value = std::true_type();
     };
@@ -361,7 +361,7 @@ public:
 public: \
 typedef STATECLASSNAME ThisState; \
 void dummy() { static_assert(std::is_same<std::remove_reference<decltype(this)>::type, STATECLASSNAME*>::value, \
-    "SM: state_setup(): First argument has to be the type of the parent class."); } \
+    "CTC: state_setup(): First argument has to be the type of the parent class."); } \
 static ThisState *getInstance() { \
     static ThisState inst; \
     return &inst; } \
@@ -378,7 +378,7 @@ STATECLASSNAME() : StateBase(#STATECLASSNAME, DESCRIPTION)
 public: \
 typedef STATECLASSNAME ThisState; \
 void dummy() { static_assert(std::is_same<std::remove_reference<decltype(this)>::type, STATECLASSNAME*>::value, \
-    "SM: state_setup(): First argument has to be the type of the parent class."); } \
+    "CTC: state_setup(): First argument has to be the type of the parent class."); } \
 using StateBase::internalTransition; \
 STATECLASSNAME() : StateBase(#STATECLASSNAME, DESCRIPTION)
 #endif
@@ -388,7 +388,7 @@ STATECLASSNAME() : StateBase(#STATECLASSNAME, DESCRIPTION)
 public: \
 typedef STATECLASSNAME ThisState; \
 void dummy() { static_assert(std::is_same<std::remove_reference<decltype(this)>::type, STATECLASSNAME*>::value, \
-    "SM: state_setup(): First argument has to be the type of the parent class."); } \
+    "CTC: state_setup(): First argument has to be the type of the parent class."); } \
 const char *name() { return #STATECLASSNAME; } \
 using StateBase::internalTransition; \
 STATECLASSNAME() : StateBase(#STATECLASSNAME, DESCRIPTION)
@@ -399,7 +399,7 @@ STATECLASSNAME() : StateBase(#STATECLASSNAME, DESCRIPTION)
 public: \
 typedef STATECLASSNAME ThisState; \
 void dummy() { static_assert(std::is_same<std::remove_reference<decltype(this)>::type, STATECLASSNAME*>::value, \
-    "SM: state_setup(): First argument has to be the type of the parent class."); } \
+    "CTC: state_setup(): First argument has to be the type of the parent class."); } \
 const char *name() { return #STATECLASSNAME; } \
 const char *description() { return DESCRIPTION; } \
 using StateBase::internalTransition; \
@@ -718,7 +718,7 @@ namespace statemachine_detail {
 
         static constexpr bool value = detail::is_one_of_collection<
                 typename TRANSITION::event, typename EVENTLIST::type>::value;
-        static_assert(value, "Transition event is not an event of the parent-system");
+        static_assert(value, "CTC: Transition event is not an event of the parent-system.");
     };
 
     template<typename ... > struct CheckTransitionsDest;
@@ -730,7 +730,7 @@ namespace statemachine_detail {
     struct CheckTransitionsDest<TRANSITION, Collector<STATEs ...>> {
         static constexpr bool value = detail::is_one_of_collection<
                 typename TRANSITION::destState, Collector<STATEs ...>>::value;
-        static_assert(value, "Transition destionation is not a state of the parent-statemachine");
+        static_assert(value, "CTC: Transition destination is not a state of the parent-statemachine");
     };
 
     template<typename ... > struct CheckTransitions;
@@ -791,7 +791,10 @@ struct StateMachine {
     typedef Collector<typename sys_detail::StateRemoveInitialFlag<STATEs>::type...> StatesT;
     typedef typename sys_detail::StatesGetInitial<Collector<STATEs...>>::type InitialStateT;
 
-    static_assert(detail::no_duplicates_in_collection<StatesT>::value, "No duplicates are allowed in state list.");
+    static_assert(state_details::StateEnsureAllConcept<StatesT>::value, "CTC: Not all given states have a correct type");
+    static_assert(!std::is_void<InitialStateT>::value, "CTC: No initial state defined.");
+
+    static_assert(detail::no_duplicates_in_collection<StatesT>::value, "CTC: No duplicates are allowed in state list of state machine.");
     static_assert(statemachine_detail::CheckStateTransitions_State<StatesT, void>::value, "");
 };
 
@@ -858,6 +861,8 @@ public:
     typedef typename detail::JoinCollectors<typename SMs::StatesT ...>::type StatesT;
     typedef typename detail::JoinCollectors<typename SMs::StatesWithInitialFlagT ...>::type StatesWithInitialFlagT;
     typedef sys_detail::StateList<EventListT, StatesT, StatesWithInitialFlagT> StateListT;
+
+    static_assert(detail::no_duplicates_in_collection<StatesT>::value, "CTC: No duplicates are allowed in state list of all state machine in the system.");
 
     static_assert(statemachine_detail::CheckStateTransitions_Events<StatesT, EventListT>::value, "");
 
