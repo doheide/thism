@@ -11,6 +11,7 @@ CONFIG -= app_bundle
 CONFIG += thread
 #CONFIG -= qt
 
+QMAKE_CXXFLAGS += -fprofile-arcs -ftest-coverage
 
 #DEFINES +=
 
@@ -18,6 +19,8 @@ INCLUDEPATH += $$PWD/../lib/include
 DEPENDPATH += $$PWD/../lib/include
 
 include(../lib/lib.pri)
+
+LIBS += -L/usr/lib -lgcov
 
 HEADERS += \
     base_sys/base_test_sys.h \
