@@ -17,3 +17,5 @@ script:
   - cd ../..
   - qmake
   - make
+  - cd test
+  - ./test
