@@ -15,7 +15,5 @@ script:
   - cd googletest/ && mkdir build && cd build
   - cmake .. && make && make install DESTDIR=../lib
   - cd ../..
-  - qmake
-  - make
-  - cd test
-  - ./test
+  - qmake && make
+  - cd test && ./test
