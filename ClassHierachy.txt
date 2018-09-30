@@ -1,0 +1,51 @@
+*****************************************
+
+HAWAL_Base
+
+| 
+
+HAWAL_DeviceAbstraction => T (by User)
+
+|                               |
+
+HAWAL_DeviceImpl<T> (by User)   HAWAL_DeviceSILTesting<T>
+
+                                |
+            
+                                HAWAL_DeviceSILTestingImpl => TT (by User)
+
+
+                                |
+
+                                HAWAL_DeviceSimulation<TT>
+
+
+
+*****************************************
+
+Events of all Systems -> EventList
+
+Device State Machines -> SMs
+
+*****************************************
+
+SysBase
+
+|
+
+System<HAWAL_DeviceImpl_User, EventList, SMs, Timer> => DS 
+* System to be used on the device
+* - HAWAL has to be derived from HAWAL_DeviceAbstraction
+
+
+SysBase 
+
+|
+
+SystemSIL<HAWAL_DeviceSILTestingImpl_User, DS_User, EventListAdder, EventListRemover, SMsAdder, SMsRemover, TimerAdder, TimerRemover>
+* System for SIL Testing and Simulator
+* - EventList, SMList and TimerList is take from DS
+* - XRemover: Remove List of Xs
+* - XAdder: Add List of X
+
+
