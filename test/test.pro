@@ -15,7 +15,7 @@ QMAKE_CXXFLAGS += -fprofile-arcs -ftest-coverage
 
 #DEFINES +=
 
-INCLUDEPATH += $$PWD/../lib/include
+INCLUDEPATH +=  ../lib/include
 DEPENDPATH += $$PWD/../lib/include
 
 include(../lib/lib.pri)
