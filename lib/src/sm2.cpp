@@ -315,4 +315,15 @@ void SystemBase::initialSetup() {
             activateStateAndParentsByIds(i, SystemBase::ID_S_Undefined, false);
 }
 
+bool SystemBase::checkIfStateIsChildOfOrSame(uint16_t parentState, uint16_t childState)
+{
+    uint16_t cState = childState;
+    while (cState != SystemBase::ID_S_Undefined) {
+        if(cState == parentState)
+            return true;
+        cState = stateParents[cState];
+    }
+    return false;
+}
+
 

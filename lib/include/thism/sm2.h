@@ -513,6 +513,8 @@ protected:
     void activateStateAndParentsByIds(uint16_t destState, uint16_t senderState, bool blockActivatedStates=true);
 
     void initialSetup();
+
+    bool checkIfStateIsChildOfOrSame(uint16_t parentState, uint16_t childState);
 };
 
 // **********************************************************************************
@@ -630,7 +632,6 @@ namespace sys_detail {
         // *****
         struct StateList_Base { };
     }
-
 
     namespace helper {
         template<typename STATE> struct IsInitialState
@@ -1004,6 +1005,23 @@ QString make_treeuml(SYS *sys) {
                 foreach(cl, stateUML[cs].split("\n", QString::SkipEmptyParts)) {
                     s += QString("  %1\n").arg(cl);
                 }
+
+                {
+                    TransitionImpl *trs = sys->transitions[cs];
+                    for(uint16_t ct=0; ct!=sys->transitionsNumberPerState[cs]; ct++)
+                        if(sls.ids.contains(cs)) {
+                            if(sys->checkIfStateIsChildOfOrSame(cs, trs[ct].stateId)) {
+                                s += QString("[*]");
+                            }
+                            else {
+                                s += QString("%1").arg(sys->getStateById(cs)->name());
+                            }
+                            s+= QString(" --> %1: %2\n")
+                                    .arg(sys->getStateById(trs[ct].stateId)->name())
+                                    .arg(event_details::getEventName<typename SYS::EventListT>(trs[ct].eventId));
+                        }
+                }
+
                 s += "}\n";
 
                 QString ds = sys->getStateById(cs)->description();
@@ -1021,15 +1039,15 @@ QString make_treeuml(SYS *sys) {
 
     out += QString("\n[*] --> %1\n").arg(sys->template getState<typename SM::InitialStateT>()->name());
 
-    for(uint16_t cs=0; cs!=SYS::numberOfStatesT::value; cs++) {
-        TransitionImpl *trs = sys->transitions[cs];
-        for(uint16_t ct=0; ct!=sys->transitionsNumberPerState[cs]; ct++)
-            if(sls.ids.contains(cs)) {
-                out += QString("%1 --> %2: %3\n").arg(sys->getStateById(cs)->name())
-                        .arg(sys->getStateById(trs[ct].stateId)->name())
-                        .arg(event_details::getEventName<typename SYS::EventListT>(trs[ct].eventId));
-            }
-    }
+//    for(uint16_t cs=0; cs!=SYS::numberOfStatesT::value; cs++) {
+//        TransitionImpl *trs = sys->transitions[cs];
+//        for(uint16_t ct=0; ct!=sys->transitionsNumberPerState[cs]; ct++)
+//            if(sls.ids.contains(cs)) {
+//                out += QString("%1 --> %2: %3\n").arg(sys->getStateById(cs)->name())
+//                        .arg(sys->getStateById(trs[ct].stateId)->name())
+//                        .arg(event_details::getEventName<typename SYS::EventListT>(trs[ct].eventId));
+//            }
+//    }
 
     std::cout << out.toStdString();
 
