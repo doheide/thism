@@ -38,6 +38,8 @@ System<HAWAL_DeviceImpl_User, EventList, SMs, Timer> => DS
 * - HAWAL has to be derived from HAWAL_DeviceAbstraction
 
 
+
+
 SysBase 
 
 |
