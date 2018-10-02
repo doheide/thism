@@ -69,7 +69,7 @@ TEST_F(StateDeAndActivationTest, ActivateState) {
 
     for(uint16_t i=0; i!=sys.numberOfStates; i++)
         if(SMSys::StateId<StateToTest>::value==i)
-            EXPECT_EQ(smsTester.t_isStateActiveBI(i), true) << "All State Flags were cleared, but state " << i << " is active.";
+            EXPECT_EQ(smsTester.t_isStateActiveBI(i), true) << "All State Flags were cleared, but state " << i << " is not active.";
         else
             EXPECT_EQ(smsTester.t_isStateActiveBI(i), false) << "All State Flags were cleared, but state " << i << " is active.";
 }
@@ -90,7 +90,7 @@ TEST_F(StateDeAndActivationTest, ActivateStateFull) {
 
     for(uint16_t i=0; i!=sys.numberOfStates; i++)
         if(SMSys::StateId<S_TickInner>::value==i)
-            EXPECT_EQ(smsTester.t_isStateActiveBI(i), true) << "All State Flags were cleared, but state " << i << " is active.";
+            EXPECT_EQ(smsTester.t_isStateActiveBI(i), true) << "All State Flags were cleared, but state " << i << " is not active.";
         else
             EXPECT_EQ(smsTester.t_isStateActiveBI(i), false) << "All State Flags were cleared, but state " << i << " is active.";
 
