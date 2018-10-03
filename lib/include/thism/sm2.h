@@ -457,6 +457,7 @@ protected:
 
     uint16_t timerNum;
     uint32_t *timerCounter;
+    uint32_t *timerCounterRepeat;
     uint16_t *timerOwner;
     uint16_t *timerInitiator;
     uint16_t *timerEvents;
@@ -820,6 +821,7 @@ struct SMTimerListTmpl {
 
     static constexpr uint16_t size = sizeof...(SMTIMERs);
     uint32_t timerCounter[size];
+    uint32_t timerCounterRepeat[size];
     uint16_t timerOwner[size];
     uint16_t timerInitiator[size];
     uint16_t timerEvents[size];
@@ -913,6 +915,7 @@ public:
 
         timerNum = SMTimerListT::size;
         timerCounter = smTimerList.timerCounter;
+        timerCounterRepeat = smTimerList.timerCounterRepeat;
         timerEvents = smTimerList.timerEvents;
         timerInitiator = smTimerList.timerInitiator;
         timerOwner = smTimerList.timerOwner;
@@ -933,11 +936,15 @@ public:
     { raiseEventIdByIds(EventListT::template EventId<EVENT>::value, ID_S_Undefined); }
 
     template<typename TIMER, typename OWNER, typename INITIATOR=OWNER>
-    void startTimer(uint32_t time=TIMER::value) {
+    void startTimer(bool repeat = true, uint32_t time=TIMER::value) {
         SMTimerListT::template timerCheckSender<TIMER, INITIATOR>();
 
         uint16_t id = SMTimerListT::template TimerId<TIMER>::value;
         smTimerList.timerCounter[id] = time+1;
+        if(repeat)
+            smTimerList.timerCounterRepeat[id] = smTimerList.timerCounter[id];
+        else
+            smTimerList.timerCounterRepeat[id] = 0;
         smTimerList.timerOwner[id] = StateId<OWNER>::value;
         smTimerList.timerInitiator[id] = StateId<INITIATOR>::value;
     }

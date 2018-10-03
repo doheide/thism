@@ -211,9 +211,11 @@ uint16_t SystemBase::getParentIdBI(uint16_t cstate) {
 
 void SystemBase::decreaseCounter() {
     for(uint16_t i=0; i!=timerNum; i++) {
-        if(timerCounter[i]==1)
+        if(timerCounter[i]==1) {
             raiseEventIdByIds(timerEvents[i], timerInitiator[i]);
-        if(timerCounter[i]>0)
+            timerCounter = timerCounterRepeat;
+        }
+        else if(timerCounter[i]>0)
            timerCounter[i]--;
     }
 }
