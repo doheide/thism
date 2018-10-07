@@ -1,9 +1,15 @@
 #ifndef SM_BASE_H
 #define SM_BASE_H
 
+// ******************************************************************
+// ******************************************************************
+struct True_T {
+    typedef std::integral_constant<bool, true> type;
+};
+struct False_T {
+    typedef std::integral_constant<bool, true> type;
+};
 
-// ******************************************************************
-// ******************************************************************
 namespace helper {
     struct CollectorBase {};
 
@@ -16,6 +22,69 @@ struct Collector : helper::CollectorBase {
     typedef helper::CollectorI<Args...> type;
     static constexpr auto size = sizeof ...(Args);
 };
+
+template<typename ...>
+struct SizeOfCollector;
+template<typename ...As>
+struct SizeOfCollector<Collector<As...>> {
+    static const int size = sizeof...(As);
+};
+
+
+namespace detail {
+    template <typename...>
+    struct is_one_of {
+        static constexpr bool value = false; //std::is_same<int>;
+    };
+    template <typename F, typename S, typename... T>
+    struct is_one_of<F, S, T...> {
+        static constexpr bool value =
+            std::is_same<F, S>::value || is_one_of<F, T...>::value;
+    };
+    template <typename F, typename ... T>
+    struct is_one_of_collection;
+    template <typename F, typename ... T>
+    struct is_one_of_collection<F, Collector<T...>> {
+        static constexpr bool value = is_one_of<F, T...>::value;
+    };
+
+    // ****
+    template <typename ...> struct is_one_of_T;
+    template <typename T, typename A, typename ...As>
+    struct is_one_of_T<T, Collector<A,As...>> {
+        typedef typename is_one_of_T<T, Collector<As...>>::type type;
+    };
+    template <typename T, typename ...As>
+    struct is_one_of_T<T, Collector<T,As...>> {
+        typedef True_T type;
+    };
+    template <typename T>
+    struct is_one_of_T<T, Collector<>> {
+        typedef False_T type;
+    };
+
+    // ***
+    template <typename...>
+    struct no_duplicates {
+        static constexpr bool value = true;
+    };
+    template <typename S, typename ... T>
+    struct no_duplicates<S, T...> {
+        static constexpr bool value = no_duplicates<T...>::value &&
+                !is_one_of_collection<S, Collector<T...>>::value;
+        //no_duplicates<T...>::value &&
+    };
+
+    template <typename ... T>
+    struct no_duplicates_in_collection;
+    template <typename ... T>
+    struct no_duplicates_in_collection<Collector<T...>> {
+        static constexpr bool value = no_duplicates<T...>::value;
+    };
+}
+
+// ******************************************************************
+// ******************************************************************
 
 namespace detail {
     template <typename ...>
@@ -36,9 +105,34 @@ namespace detail {
     struct CollectorsJoinTwo<Collector<As...>> {
         typedef Collector<As...> type;
     };
-    template<typename ...As, typename ...Bs>
-    struct CollectorsJoinTwo< Collector<As...>, Collector<Bs...> > {
+    template<typename A, typename ...As, typename ...Bs>
+    struct CollectorsJoinTwo< Collector<A, As...>, Collector<Bs...> > {
         typedef Collector<As..., Bs...> type;
+    };
+
+    // *****************************************************************
+    template<typename ...> struct CollectorsRemoveSecond_Impl;
+    template<typename A, typename ...As, typename ...Bs, typename ...RES>
+    struct CollectorsRemoveSecond_Impl< Collector<A, As...>, Collector<Bs...> , Collector<RES...>, True_T > {
+        typedef typename CollectorsRemoveSecond_Impl< Collector<As...>, Collector<Bs...> , Collector<RES...>>::type type;
+    };
+    template<typename A, typename ...As, typename ...Bs, typename ...RES>
+    struct CollectorsRemoveSecond_Impl< Collector<A, As...>, Collector<Bs...> , Collector<RES...>, False_T > {
+        typedef typename CollectorsRemoveSecond_Impl< Collector<As...>, Collector<Bs...> , Collector<RES..., A>>::type type;
+    };
+    template<typename A, typename ...As, typename ...Bs, typename ...RES>
+    struct CollectorsRemoveSecond_Impl< Collector<A, As...>, Collector<Bs...> , Collector<RES...> > {
+        typedef typename CollectorsRemoveSecond_Impl< Collector<A, As...>, Collector<Bs...>, Collector<RES...>, is_one_of_T<A, Collector<Bs...>>>::type type;
+    };
+    template<typename ...Bs, typename ...RES>
+    struct CollectorsRemoveSecond_Impl< Collector<>, Collector<Bs...> , Collector<RES...> > {
+        typedef Collector<RES...> type;
+    };
+
+    template<typename ...> struct CollectorsRemoveSecond;
+    template<typename ...As, typename ...Bs>
+    struct CollectorsRemoveSecond< Collector<As...>, Collector<Bs...> > {
+        typedef CollectorsRemoveSecond_Impl<Collector<As...>, Collector<Bs...>, Collector<>> type;
     };
 
     // *****************************************************************
@@ -58,6 +152,8 @@ namespace detail {
         void operator()(F &) { }
     };
 }
+
+// *****************************************************************
 // *****************************************************************
 #define make_join_lists(XXX, XXXX) \
 namespace join_list_helper_ ## XXX { \
@@ -79,51 +175,11 @@ struct JoinListOfCollectors_ ## XXX { \
     typedef typename join_list_helper_ ## XXX::JoinListOfCollectors_impl<A...>::type type; \
 }
 
-template<typename ...>
-struct SizeOfCollector;
-template<typename ...As>
-struct SizeOfCollector<Collector<As...>> {
-    static const int size = sizeof...(As);
-};
-
 namespace detail {
     make_join_lists(states, details::states);
     make_join_lists(type, type);
-
-    template <typename...>
-    struct is_one_of {
-        static constexpr bool value = false; //std::is_same<int>;
-    };
-    template <typename F, typename S, typename... T>
-    struct is_one_of<F, S, T...> {
-        static constexpr bool value =
-            std::is_same<F, S>::value || is_one_of<F, T...>::value;
-    };
-    template <typename F, typename ... T>
-    struct is_one_of_collection;
-    template <typename F, typename ... T>
-    struct is_one_of_collection<F, Collector<T...>> {
-        static constexpr bool value = is_one_of<F, T...>::value;
-    };
-
-    template <typename...>
-    struct no_duplicates {
-        static constexpr bool value = true;
-    };
-    template <typename S, typename ... T>
-    struct no_duplicates<S, T...> {
-        static constexpr bool value = no_duplicates<T...>::value &&
-                !is_one_of_collection<S, Collector<T...>>::value;
-        //no_duplicates<T...>::value &&
-    };
-
-    template <typename ... T>
-    struct no_duplicates_in_collection;
-    template <typename ... T>
-    struct no_duplicates_in_collection<Collector<T...>> {
-        static constexpr bool value = no_duplicates<T...>::value;
-    };
 }
+
 // ******************************************************************
 // ******************************************************************
 #define make_tester_func_type(XXX) \
