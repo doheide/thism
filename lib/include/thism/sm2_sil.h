@@ -32,6 +32,12 @@ struct SMSystem_SIL {
     typedef SMSystem< BAHA, EventListFinal, SMsListFinal, TimerListFinal> SMSysCur;
 
     typedef SMSys_Test<TestSys> SMSysCur_Test;
+
+
+    SMSysCur sys;
+
+    SMSystem_SIL() : sys(_baha) {
+    }
 };
 
 
