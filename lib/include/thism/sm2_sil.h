@@ -19,14 +19,15 @@ namespace SMSystem_SIL_helper {
 template <typename BAHA, typename SMSys, typename EventsAdd, typename EventsRemove, typename SMsAdd,
           typename SMsRemove, typename TimerAdd, typename TimerRemove>
 struct SMSystem_SIL {
-    typedef EventListXXX EventListAdd;
-    typedef EventListXXX EventListFinal;
+    typedef typename detail::CollectorsRemoveSecond<typename SMSys::AllEvents::EventListT::type, EventsRemove>::type EventListElsRemoved;
+    typedef typename detail::JoinCollectors<EventListElsRemoved, EventsAdd>::type EventListElsFinal;
 
-    typedef SMsListXXX SMsListAdd;
-    typedef SMsListXXX SMsListFinal;
 
-    typedef TimerListXXX TimerListAdd;
-    typedef TimerListXXX TimerListFinal;
+    typedef typename detail::CollectorsRemoveSecond<typename SMSys::SMsT, SMsRemove>::type SMsListRemoved;
+    typedef typename detail::JoinCollectors<SMsListRemoved, SMsAdd>::type SMsListFinal;
+
+    typedef typename detail::CollectorsRemoveSecond<typename SMSys::SMTimerListT, TimerRemove>::type TimerListRemoved;
+    typedef typename detail::JoinCollectors<TimerListRemoved, TimerAdd>::type TimerListFinal;
 
     typedef SMSystem< BAHA, EventListFinal, SMsListFinal, TimerListFinal> SMSysCur;
 
