@@ -169,7 +169,6 @@ struct TimerTest : public ::testing::Test {
 
 };
 
-TEST_F(TimerTest, DisableTimerOnReset) {
-    FAIL() << "Feature needs to be implemented";
+TEST_F(TimerTest, DisableTimerOnExit) {
 }
 
