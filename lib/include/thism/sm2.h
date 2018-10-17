@@ -948,6 +948,12 @@ public:
         smTimerList.timerOwner[id] = StateId<OWNER>::value;
         smTimerList.timerInitiator[id] = StateId<INITIATOR>::value;
     }
+    template<typename TIMER>
+    void disableTimer() {
+        uint16_t id = SMTimerListT::template TimerId<TIMER>::value;
+        smTimerList.timerCounter[id] = 0;
+        smTimerList.timerCounterRepeat[id] = 0;
+    }
 };
 
 
