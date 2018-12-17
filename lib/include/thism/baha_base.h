@@ -36,7 +36,7 @@ public:
     BAHA_Void(SystemBase *_sys=0) : BAHA_Base(_sys) { }
     virtual ~BAHA_Void() { }
 
-    void log(const char *c) { }
+    void log(const char */*c*/) { }
     void logLineEnd() { }
 };
 
