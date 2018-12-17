@@ -13,6 +13,11 @@ CONFIG += thread
 
 QMAKE_CXXFLAGS += -fprofile-arcs -ftest-coverage
 
+
+DEFINES += DO_SIMULATION
+DEFINES += "BAHA_TYPE=BAHA_Void"
+DEFINES += "BAHA_INCLUDE=baha_base.h"
+
 #DEFINES +=
 
 INCLUDEPATH +=  ../lib/include

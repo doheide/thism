@@ -16,7 +16,8 @@ namespace SMSystem_SIL_helper {
 
 // ***********************************************************
 // ***********************************************************
-template <typename BAHA, typename SMSys, typename EventsAdd, typename EventsRemove, typename SMsAdd,
+template <typename BAHA, typename SMSys, typename EventsAdd,
+          typename EventsRemove, typename SMsAdd,
           typename SMsRemove, typename TimerAdd, typename TimerRemove>
 struct SMSystem_SIL {
     typedef typename detail::CollectorsRemoveSecond<typename SMSys::AllEvents::EventListT::type, EventsRemove>::type EventListElsRemoved;
@@ -29,14 +30,14 @@ struct SMSystem_SIL {
     typedef typename detail::CollectorsRemoveSecond<typename SMSys::SMTimerListT, TimerRemove>::type TimerListRemoved;
     typedef typename detail::JoinCollectors<TimerListRemoved, TimerAdd>::type TimerListFinal;
 
-    typedef SMSystem< BAHA, EventListFinal, SMsListFinal, TimerListFinal> SMSysCur;
+    typedef SMSystem< BAHA, EventListElsFinal, SMsListFinal, TimerListFinal> SMSysCur;
 
-    typedef SMSys_Test<TestSys> SMSysCur_Test;
+    typedef SMSys_Test<SMSysCur> SMSysCur_Test;
 
 
     SMSysCur sys;
 
-    SMSystem_SIL() : sys(_baha) {
+    SMSystem_SIL(BAHA *_baha) : sys(_baha) {
     }
 };
 

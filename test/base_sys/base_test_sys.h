@@ -45,7 +45,7 @@ struct EventList; MAKE_EVENT_LIST(EventList, E_Lala, E_Lili);
 typedef SMTimer<Collector<S_Tick, S_Tack>> SMT_Std;
 typedef SMTimerListTmpl<EventList, SMT_Std> SMTimerList;
 
-typedef SMSystem<BAHA_Base, EventList, Collector<SM>, SMTimerList> SMSys;
+typedef SMSystem<EventList, Collector<SM>, SMTimerList> SMSys;
 
 // *****
 extern SMSys *smsys;

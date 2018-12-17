@@ -72,7 +72,8 @@ protected:
         }
 
 
-        QString cmd = QString("gcc -c -I%1/lib/include/ -I%1/test/base_sys/ %2 2> compile_output.log").arg(NESTED_COMPILATION_BASE).arg(test_file);
+        QString cmd = QString("gcc -c -I%1/lib/include/ -I%1/test/base_sys/ -DBAHA_TYPE=BAHA_Void -DBAHA_INCLUDE=baha_base.h %2 2> compile_output.log")
+                .arg(NESTED_COMPILATION_BASE).arg(test_file);
         int r = std::system(cmd.toStdString().c_str());
 
         return r;

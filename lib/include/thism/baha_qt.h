@@ -25,25 +25,24 @@
 #ifndef HAWAL_QT_H
 #define HAWAL_QT_H
 
-#include <thism/sm2.h>
+//#include <thism/sm2.h>
 
 #include <QObject>
 #include <QBasicTimer>
 #include <QTimerEvent>
 #include <iostream>
 
+#include <thism/baha_base.h>
 
-class BAHA_qt;
-
-class BAHA_qt_impl : public QObject {
+class BAHA_tick_impl : public QObject {
     Q_OBJECT
 
-    BAHA_qt *parent;
+    BAHA_Base *parent;
     QBasicTimer sysTick_timer;
     QBasicTimer eventloop_timer;
 
 public:
-    BAHA_qt_impl(BAHA_qt *p) : parent(p) {
+    BAHA_tick_impl(BAHA_Base *p) : parent(p) {
         sysTick_timer.start(100, this);
         eventloop_timer.start(1, this);
     }
@@ -51,16 +50,16 @@ public:
     void timerEvent(QTimerEvent *event);
 };
 
-class BAHA_qt : public BAHA_Base
+class BAHA_qtstd : public BAHA_Base
 {
-    BAHA_qt_impl *qt_impl;
+    BAHA_tick_impl *qt_impl;
 
 public:
-    BAHA_qt();
+    BAHA_qtstd();
+    ~BAHA_qtstd();
 
-    virtual void log(const char *c);
-    virtual void logLineEnd();
-
+    void log(const char *c);
+    void logLineEnd();
 };
 
 #endif // HAWAL_QT_H

@@ -25,38 +25,32 @@
 #include <thism/sm2.h>
 
 
-void BAHA_Base::log(uint8_t n) {
+void LogBase::log(uint8_t n) {
     logNumberImpl(n, 2);
 }
 
-void BAHA_Base::log(uint16_t n) {
+void LogBase::log(uint16_t n) {
     logNumberImpl(n, 4);
-
 }
 
-void BAHA_Base::log(uint32_t n) {
+void LogBase::log(uint32_t n) {
     logNumberImpl(n, 8);
 }
 
-void BAHA_Base::log(EventIdT id) {
-    sys->logEventName(id.id);
+void LogBase::log(EventIdT id) {
+    baha->sysBaseGet()->logEventName(id.id);
 }
 
-void BAHA_Base::log(StateIdT id) {
-    sys->logStateName(id.id);
+void LogBase::log(StateIdT id) {
+    baha->sysBaseGet()->logStateName(id.id);
 }
 
-void BAHA_Base::sysTickCallback() {
-    sysTime++;
-
-    sys->decreaseCounter();
+void LogBase::logTime() {
+    log(baha->sysBaseGet()->sysTimeGet());
 }
 
-void BAHA_Base::processEvents() {
-    sys->processEvents();
-}
 
-void BAHA_Base::logNumberImpl(uint32_t n, uint8_t digits) {
+void LogBase::logNumberImpl(uint32_t n, uint8_t digits) {
     char temp[digits+1];
     uint8_t cwp = digits;
     temp[cwp--] = 0;
@@ -72,9 +66,12 @@ void BAHA_Base::logNumberImpl(uint32_t n, uint8_t digits) {
 }
 
 
-SystemBase::SystemBase(BAHA_Base *_baha) : bahaBase(_baha), eventBuffer{} {
+SystemBase::SystemBase(BAHA_TYPE *_baha) : baha(_baha), logf(baha), eventBuffer{} {
     eventBufferReadPos = 0;
     eventBufferWritePos = 0;
+#ifdef DO_SIMULATION
+    sicaba = 0;
+#endif
 }
 
 void SystemBase::processEvents() {
@@ -88,7 +85,7 @@ void SystemBase::processEvents() {
     //for(uint8_t i=eventBufferReadPos; i != readUntil; i=(i+1)&((1<<EVENT_BUFFER_SIZE_V)-1)) {
         sys_detail::EventBuffer &cevent = eventBuffer[eventBufferReadPos];
 
-        bahaBase->logLine("!! EB ", EventIdT{cevent.event}, " | ", StateIdT{cevent.sender});
+        logf.logLine("!! EB ", EventIdT{cevent.event}, " | ", StateIdT{cevent.sender});
 
         for(uint16_t level = maxLevel; level!=0; level--)
             for(uint16_t csi=0; csi!=numberOfStates; csi++)
@@ -103,7 +100,7 @@ void SystemBase::processEvents() {
                                 StateBase *sb = getStateById(csi);
 
                                 uint16_t &cs = tics->stateId;
-                                bahaBase->logLine("!! T1 ", EventIdT{tics->eventId}, ": ", StateIdT{csi}, " -> ", StateIdT{cs});
+                                //bahaBase->logLine("!! T1 ", EventIdT{tics->eventId}, ": ", StateIdT{csi}, " -> ", StateIdT{cs});
 
                                 executeTransition(csi, cs, cevent.sender, cevent.event, true);
 
@@ -209,7 +206,12 @@ uint16_t SystemBase::getParentIdBI(uint16_t cstate) {
     return stateParents[cstate];
 }
 
-void SystemBase::decreaseCounter() {
+void SystemBase::sysTickCallback() {
+    if(baha->pauseSysTickGet())
+        return;
+
+    sysTime++;
+
     for(uint16_t i=0; i!=timerNum; i++) {
         if(timerCounter[i]==1) {
             raiseEventIdByIds(timerEvents[i], timerInitiator[i]);
@@ -221,7 +223,12 @@ void SystemBase::decreaseCounter() {
 }
 
 void SystemBase::raiseEventIdByIds(uint16_t eventId, uint16_t senderStateId) {
-    bahaBase->logLine("!! R ", EventIdT{eventId}, " | ", StateIdT{senderStateId});
+    logf.logLine("!! R ", EventIdT{eventId}, " | ", StateIdT{senderStateId});
+
+#ifdef DO_SIMULATION
+    if(sicaba)
+        sicaba->onRaiseEvent(eventId);
+#endif
 
     eventBuffer[eventBufferWritePos++] = { eventId, senderStateId };
     eventBufferWritePos &= (1<<EVENT_BUFFER_SIZE_V) - 1;
@@ -234,7 +241,7 @@ void SystemBase::executeTransition(uint16_t startState, uint16_t destState, uint
         raiseEventIdByIds(ID_E_FatalError, senderState);
     }
 
-    bahaBase->logLine("!! T ", EventIdT{event}, ": ", StateIdT{startState}, " -> ", StateIdT{destState}, " | ", StateIdT{senderState});
+    logf.logLine("!! T ", EventIdT{event}, ": ", StateIdT{startState}, " -> ", StateIdT{destState}, " | ", StateIdT{senderState});
 
     uint16_t temp, i;
     uint16_t commonState;
@@ -258,7 +265,7 @@ void SystemBase::executeTransition(uint16_t startState, uint16_t destState, uint
 
     // make list of states to disable
     while( (lastActiveChild!=0) && (lastActiveChild!=commonState) ) {
-        deactivateStateFull(lastActiveChild);
+        deactivateStateFullById(lastActiveChild);
         lastActiveChild = getParentIdBI(lastActiveChild);
     }
 
@@ -268,7 +275,12 @@ void SystemBase::executeTransition(uint16_t startState, uint16_t destState, uint
 
 void SystemBase::activateStateFullByIds(uint16_t curStateId, uint16_t destStateId, uint16_t senderStateId, bool blockActivatedStates) {
 
-    bahaBase->logLine("!! EN ", StateIdT{curStateId});
+    logf.logLine("!! EN ", StateIdT{curStateId});
+
+#ifdef DO_SIMULATION
+    if(sicaba)
+        sicaba->onActivateState(curStateId);
+#endif
 
     isStateActiveSetBI(curStateId, true);
     isStateBlockedSetBI(curStateId, blockActivatedStates);
@@ -281,9 +293,14 @@ void SystemBase::activateStateFullByIds(uint16_t curStateId, uint16_t destStateI
         raiseEventIdByIds(ID_E_Initial, curStateId);
 }
 
-void SystemBase::deactivateStateFull(uint16_t curStateId) {
+void SystemBase::deactivateStateFullById(uint16_t curStateId) {
 
-    bahaBase->logLine("!! EX ", StateIdT{curStateId});
+    logf.logLine("!! EX ", StateIdT{curStateId});
+
+#ifdef DO_SIMULATION
+    if(sicaba)
+        sicaba->onDeactivateState(curStateId);
+#endif
 
     getStateById(curStateId)->onExit();
     isStateActiveSetBI(curStateId, false);

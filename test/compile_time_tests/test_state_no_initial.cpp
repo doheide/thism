@@ -22,9 +22,9 @@ Make_StateMachine( SM_Test, S_Main, S_Tick, S_TickInner, S_TickInnerInner, S_Tac
 typedef SMTimer<Collector<S_Tick, S_Tack>> SMT_Std;
 typedef SMTimerListTmpl<EventList, SMT_Std> SMTimerList;
 
-typedef SMSystem<BAHA_Base, EventList, Collector<SM_Test>, SMTimerList> SMSys_Test;
+typedef SMSystem<EventList, Collector<SM_Test>, SMTimerList> SMSys_Test;
 
-BAHA_Base bb;
+BAHA_TYPE bb;
 SMSys_Test sys(&bb);
 
 

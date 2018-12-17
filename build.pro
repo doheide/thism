@@ -1,6 +1,10 @@
 TEMPLATE = subdirs
 
 SUBDIRS = \
-    lib \
+    example \
     test
- 
+
+
+#    lib \
+#    libsimu \
+

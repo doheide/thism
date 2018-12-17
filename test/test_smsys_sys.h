@@ -40,7 +40,7 @@ TEST(thism, thism) {
 }
 
 struct StateDeAndActivationTest : public ::testing::Test {
-    BAHA_Base baha;
+    BAHA_TYPE baha;
     SMSys sys;
 
     SMSys_Test<SMSys> smsTester;

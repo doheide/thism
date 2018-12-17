@@ -28,6 +28,21 @@
 #include <type_traits>
 #include <stdint.h>
 
+#include <thism/baha_base.h>
+
+
+// *****************************************************************
+#ifndef BAHA_TYPE
+#  error BAHA_TYPE not set.
+#endif
+
+#ifndef BAHA_INCLUDE
+#  error BAHA_INCLUDE not set.
+#endif
+
+#define STRINGIFY(x) STRINGIFY_(x)
+#define STRINGIFY_(x) #x
+#include STRINGIFY(BAHA_INCLUDE)
 
 // *****************************************************************
 //#define __make_treeuml
@@ -82,19 +97,15 @@ class SystemBase;
 struct EventIdT { uint16_t id; };
 struct StateIdT { uint16_t id; };
 
-class BAHA_Base {
-protected:
-    uint32_t sysTime;
-    SystemBase *sys;
+
+class LogBase {
+    BAHA_TYPE *baha;
 
 public:
-    BAHA_Base() : sysTime(0) { }
+    LogBase(BAHA_TYPE *_baha) : baha(_baha) { }
 
-    void sysSet(SystemBase *_sys) {
-        sys = _sys;
-    }
-
-    virtual void log(const char *) {
+    void log(const char *c) {
+        baha->log(c);
     }
     void log(uint8_t n);
     void log(uint16_t n);
@@ -102,18 +113,18 @@ public:
     void log(EventIdT id);
     void log(StateIdT id);
 
+    void logTime();
+
     template<typename ...A>
     void logLine(A... a) {
-        log(sysTime);
+        logTime();
         log(" | ");
         logLineImpl(a...);
         logLineEnd();
     }
-    virtual void logLineEnd() { }
-
-    virtual void sysTickCallback();
-
-    void processEvents();
+    void logLineEnd() {
+        baha->logLineEnd();
+    }
 
 protected:
     template<typename A, typename ...As>
@@ -126,7 +137,6 @@ protected:
     void logNumberImpl(uint32_t n, uint8_t digits);
 
 };
-
 
 // ******************************************************************
 // ******************************************************************
@@ -414,7 +424,15 @@ struct MarkInitialState {
 // *****************************************************************
 // *****************************************************************
 
-
+namespace Simu_helper {
+#ifdef DO_SIMULATION
+    struct SimuCallbacks {
+        void onActivateState(uint16_t /*stateId*/) { }
+        void onDeactivateState(uint16_t /*stateId*/) { }
+        void onRaiseEvent(uint16_t /*eventId*/) { }
+    };
+#endif
+}
 // **********************************************************************************
 // **********************************************************************************
 namespace sys_detail {
@@ -438,9 +456,11 @@ public:
 
     uint16_t numberOfStates;
     uint16_t maxLevel;
+    uint32_t sysTime;
 
 protected:
-    BAHA_Base *bahaBase;
+    BAHA_TYPE *baha;
+    LogBase logf;
 
     sys_detail::EventBuffer eventBuffer[1<<EVENT_BUFFER_SIZE_V];
     uint8_t eventBufferWritePos, eventBufferReadPos;
@@ -463,15 +483,16 @@ protected:
     uint16_t *timerEvents;
 
 public:
-    SystemBase(BAHA_Base *_baha);
+    SystemBase(BAHA_TYPE *_baha);
+    virtual ~SystemBase() { }
 
     void processEvents();
 
     virtual void logEventName(uint16_t) { }
 //    virtual void logStateName(uint16_t) { }
 
-    BAHA_Base *bahaBaseGet() {
-        return bahaBase;
+    BAHA_TYPE *bahaBaseGet() {
+        return baha;
     }
 
     uint16_t getParentIdBI(uint16_t cstate);
@@ -479,16 +500,27 @@ public:
     virtual void logStateName(uint16_t id) {
 #ifdef __useNames
         if(id==SystemBase::ID_S_Undefined)
-            bahaBase->log("S_Undefined");
+            baha->log("S_Undefined");
         else
-            bahaBase->log(statesBP[id]->name());
+            baha->log(statesBP[id]->name());
 #else
-        bahaBase->log("S_");
-        bahaBase->log(id);
+        baha->log("S_");
+        baha->log(id);
 #endif
     }
 
-    void decreaseCounter();
+    void sysTickCallback();
+
+#ifdef DO_SIMULATION
+    Simu_helper::SimuCallbacks *sicaba;
+    void setSimuCallbacks(Simu_helper::SimuCallbacks *_sicaba) {
+        this->sicaba = _sicaba;
+    }
+#endif
+
+    uint32_t sysTimeGet() {
+        return sysTime;
+    }
 
 protected:
     virtual bool checkEventProtection(sys_detail::EventBuffer &cevent, uint16_t cStateId);
@@ -507,9 +539,9 @@ protected:
     void raiseEventIdByIds(uint16_t eventId, uint16_t senderStateId);
 
     void executeTransition(uint16_t startState, uint16_t destState, uint16_t senderState, uint16_t event, bool blockActivatedStates);
-
     void activateStateFullByIds(uint16_t curStateId, uint16_t destStateId, uint16_t senderStateId, bool blockActivatedStates);
-    void deactivateStateFull(uint16_t curStateId);
+
+    void deactivateStateFullById(uint16_t curStateId);
 
     void activateStateAndParentsByIds(uint16_t destState, uint16_t senderState, bool blockActivatedStates=true);
 
@@ -844,12 +876,10 @@ template<typename ...>
 class SMSystem;
 
 //template<typename LALA, typename ...SMs>
-template<typename BAHA_TT, typename EVL, typename ...SMs, typename _SMTimerList>
-class SMSystem<BAHA_TT, EVL, Collector<SMs...>, _SMTimerList> : public SystemBase {
+template<typename EVL, typename ...SMs, typename _SMTimerList>
+class SMSystem<EVL, Collector<SMs...>, _SMTimerList> : public SystemBase {
 
 public:
-    typedef BAHA_TT BAHA_T;
-
     typedef SMSystem<SMs...> This;
 
     typedef Collector<SMs...> SMsT;
@@ -878,10 +908,10 @@ public:
 
     virtual void logEventName(uint16_t id) {
 #ifdef __useNames
-        bahaBase->log(event_details::getEventName<EventListT>(id));
+        baha->log(event_details::getEventName<EventListT>(id));
 #else
-        bahaBase->log("E_");
-        bahaBase->log(id);
+        baha->log("E_");
+        baha->log(id);
 #endif
     }
 
@@ -892,11 +922,11 @@ protected:
     EventListT eventList;
     SMTimerListT smTimerList;
 
-    BAHA_T *baha;
+//    BAHA_T *baha;
 
 public:
-    SMSystem(BAHA_T *_baha) : SystemBase(_baha), statesImpl() {
-        bahaBase->sysSet(this);
+    SMSystem(BAHA_TYPE *_baha) : SystemBase(_baha), statesImpl() {
+        baha->sysSet(this);
 
         numberOfStates = numberOfStatesT::value;
 
@@ -922,6 +952,7 @@ public:
 
         initialSetup();
     }
+    virtual ~SMSystem() { }
 
     StateBase *getStateById(uint16_t id) { return statesImpl.getById(id); }
     template<typename STATE> STATE *getState() { return statesImpl.template get<STATE>(); }
@@ -990,7 +1021,7 @@ QString make_treeuml(SYS *sys) {
 #ifndef __useDescription
     static_assert(false, "define switch __useDescription has to be activated.");
 #endif
-    BAHA_Base *baha = sys->bahaBaseGet();
+    BAHA_TYPE *baha = sys->bahaBaseGet();
 
     QString stateUML[SYS::numberOfStatesT::value];
     QString out;

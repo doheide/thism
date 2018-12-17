@@ -5,6 +5,7 @@ VERSION = 1.0.0
 CONFIG += thismBuildShared
 
 QT += core
+QT += widgets
 CONFIG += c++11
 
 thismBuildShared {
@@ -21,3 +22,12 @@ DISTFILES += \
     lib.pri
 
 include(lib.pri)
+
+#HEADERS += \
+#    include/thism/simuctrl.h
+#
+#SOURCES += \
+#    src/simuctrl.cpp
+
+#FORMS += \
+#    simuctrl.ui

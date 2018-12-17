@@ -23,28 +23,31 @@
 //
 
 #include <thism/baha_qt.h>
+#include <thism/sm2.h>
 
-
-void BAHA_qt_impl::timerEvent(QTimerEvent *event) {
+void BAHA_tick_impl::timerEvent(QTimerEvent *event) {
     if(event->timerId() == eventloop_timer.timerId()) {
-        parent->processEvents();
+        parent->sysBaseGet()->processEvents();
     }
     if(event->timerId() == sysTick_timer.timerId()) {
-        parent->sysTickCallback();
+        parent->sysBaseGet()->sysTickCallback();
     }
 }
 
 
-
-BAHA_qt::BAHA_qt() {
-    qt_impl = new BAHA_qt_impl(this);
+BAHA_qtstd::BAHA_qtstd() : BAHA_Base() {
+    qt_impl = new BAHA_tick_impl(this);
 }
 
-void BAHA_qt::log(const char *c) {
+BAHA_qtstd::~BAHA_qtstd() {
+    qt_impl->deleteLater();
+}
+
+void BAHA_qtstd::log(const char *c) {
     std::cout << c;
 }
 
-void BAHA_qt::logLineEnd() {
+void BAHA_qtstd::logLineEnd() {
     std::cout << std::endl;
 }
 
