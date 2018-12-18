@@ -3,12 +3,14 @@ GOOGLETEST_DIR = ../googletest
 include(gtest_dependency.pri)
 
 
-QT += core
+QT += core testlib
 
 TEMPLATE = app
 CONFIG += console c++11
 CONFIG -= app_bundle
 CONFIG += thread
+CONFIG += testcase
+
 #CONFIG -= qt
 
 QMAKE_CXXFLAGS += -fprofile-arcs -ftest-coverage
