@@ -1027,7 +1027,7 @@ QString make_treeuml(SYS *sys) {
 #ifndef __useDescription
     static_assert(false, "define switch __useDescription has to be activated.");
 #endif
-    BAHA_TYPE *baha = sys->bahaBaseGet();
+    //BAHA_TYPE *baha = sys->bahaBaseGet();
 
     QString stateUML[SYS::numberOfStatesT::value];
     QString out;
@@ -1039,7 +1039,7 @@ QString make_treeuml(SYS *sys) {
     for(uint8_t cl = sys_detail::MaxStateLevelC<typename SYS::StatesT>::type::value; cl > 0; cl--) {
         for(uint16_t cs=0; cs!=SYS::numberOfStatesT::value; cs++) {
             if((sll.stateLevel[cs] == cl) && (sls.ids.contains(cs))) {
-                baha->logLine("Level: ", (uint8_t) cl, ": ", StateIdT{cs});
+                sys->logf.logLine("Level: ", (uint8_t) cl, ": ", StateIdT{cs});
 
                 uint16_t pid = sys->getParentIdBI(cs);
 
