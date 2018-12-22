@@ -49,7 +49,6 @@ void simu_worker::WorkerBase::run() {
 }
 
 
-
 SimuCtrl::SimuCtrl(QWidget *parent) : QWidget(parent), ui(new Ui::SimuCtrl) {
 
     ui->setupUi(this);
