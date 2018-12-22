@@ -1,4 +1,6 @@
+
 #include <thism/simuctrl.h>
+
 
 #ifdef DO_SIMULATION
 
@@ -118,6 +120,10 @@ void SimuCtrl::addEvents(QStringList sl) {
 void SimuCtrl::addStates(QStringList sl) {
     ui->lw_onEnter->addItems(sl);
     ui->lw_onExit->addItems(sl);
+}
+
+void SimuCtrl::addWidget(QWidget *w) {
+    w->setParent(this->ui->widget);
 }
 
 void SimuCtrl::setupPaused() {
