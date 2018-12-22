@@ -99,6 +99,8 @@ public:
     void addEvents(QStringList sl);
     void addStates(QStringList sl);
 
+    void addWidget(QWidget *W);
+
 public slots:
     void setupPaused();
     void on_pb_run_clicked();

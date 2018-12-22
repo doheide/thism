@@ -460,8 +460,10 @@ public:
 
 protected:
     BAHA_TYPE *baha;
+public:
     LogBase logf;
 
+protected:
     sys_detail::EventBuffer eventBuffer[1<<EVENT_BUFFER_SIZE_V];
     uint8_t eventBufferWritePos, eventBufferReadPos;
 
@@ -901,6 +903,8 @@ public:
 
     template<typename CSTATE>
     using StateId = typename StateListT::template StateId<CSTATE>;
+    template<typename CEVENT>
+    using EventId = typename EventListT::template EventId<CEVENT>;
 
     typedef std::integral_constant<uint16_t, StatesT::size> numberOfStatesT;
 

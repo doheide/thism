@@ -5,6 +5,7 @@
 #include <QBasicTimer>
 
 #include <thism/baha_base.h>
+#include <thism/baha_qt.h>
 
 class BAHA_simu;
 
