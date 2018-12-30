@@ -12,7 +12,7 @@ CONFIG += exceptions
 
 DEFINES += DO_SIMULATION
 DEFINES += "BAHA_TYPE=BAHA_simu"
-DEFINES += "BAHA_INCLUDE=baha_simu.h"
+DEFINES += "BAHA_INCLUDE=thism/baha_simu.h"
 
 
 #thismBuildShared {
