@@ -45,8 +45,9 @@ struct StateDeAndActivationTest : public ::testing::Test {
 
     SMSys_Test<SMSys> smsTester;
 
-    StateDeAndActivationTest() : sys(&baha), smsTester(sys)
-    { }
+    StateDeAndActivationTest() : sys(&baha), smsTester(sys) {
+        sys.init();
+    }
 
     void clear() {
         smsTester.clearAllStateFlags();
@@ -165,9 +166,15 @@ TEST_F(EventBufferTest, DISABLED_RaiseEvent) {
 
 
 // **************************************************************
-struct TimerTest : public ::testing::Test {
-
+struct TimerTest : public StateDeAndActivationTest {
 };
+
+TEST_F(TimerTest, CheckSingleShot) {
+    ASSERT_THAT(smsTester.timerNumGet(), Eq(1));
+
+    smsys->template startTimer<SMT_Std, S_Tick>(true);
+
+}
 
 TEST_F(TimerTest, DisableTimerOnExit) {
 }

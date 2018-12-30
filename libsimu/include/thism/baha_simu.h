@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QString>
 
-#include <thism/baha_simu.h>
+#include <thism/baha_qt.h>
 
 
 class BAHA_simu_log_impl : public QObject {
