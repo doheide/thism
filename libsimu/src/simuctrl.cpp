@@ -1,5 +1,6 @@
 
 #include <thism/simuctrl.h>
+#include <QHBoxLayout>
 
 
 #ifdef DO_SIMULATION
@@ -11,11 +12,11 @@
 
 simu_worker::WorkerBase::WorkerBase() {
 
-    baha = new BAHA_simu();
-    smsys_inst = new SMSys(baha);
+    baha = new BAHA_TYPE();
+    smsys_inst = new SMSYS_TYPE(baha);
 
     this->isPause = true;
-    this->baha->pauseSysTickSet(true);
+    this->baha->pauseSysSet(true);
 
     // *********************************
     smsys = smsys_inst;
@@ -26,26 +27,25 @@ simu_worker::WorkerBase::~WorkerBase() {
     delete smsys_inst;
 }
 
-void simu_worker::WorkerBase::doWork() {
+void simu_worker::WorkerBase::init() {
+    smsys->initialSetup();
+}
+
+void simu_worker::WorkerBase::started() {
     emit this->baha->log("** Thread started ...");
     emit this->baha->logLineEnd();
 
-/*    while(true) {
-        if(!this->isPause)
-            smsys_inst.processEvents();
-            //sysBase->processEvents();
-        QApplication::processEvents();
-    } */
+    init();
 }
 
 void simu_worker::WorkerBase::pause() {
     this->isPause = true;
-    this->baha->pauseSysTickSet(this->isPause);
+    this->baha->pauseSysSet(this->isPause);
 }
 
 void simu_worker::WorkerBase::run() {
     this->isPause = false;
-    this->baha->pauseSysTickSet(this->isPause);
+    this->baha->pauseSysSet(this->isPause);
 }
 
 
@@ -70,7 +70,7 @@ void SimuCtrl::init(simu_worker::WorkerBase *_workerBase) {
     connect(this, SIGNAL(run()), worker, SLOT(run()));
     connect(this, SIGNAL(pause()), worker, SLOT(pause()));
 
-    connect(thread, SIGNAL(started()), worker, SLOT(doWork()));
+    connect(thread, SIGNAL(started()), worker, SLOT(started()));
 
     //connect(this, SIGNAL(setPauseOnEvents(QStringList)), worker, SLOT(setPauseOnEvents(QStringList)));
     //connect(this, SIGNAL(setPauseOnEnterStates(QStringList)), worker, SLOT(setPauseOnEnterStates(QStringList)));
@@ -87,14 +87,14 @@ void SimuCtrl::init(simu_worker::WorkerBase *_workerBase) {
     this->running = false;
     {
         QStringList sl;
-        for(int i=0; i!=SMSys::EventListT::AllEvents::size; i++)
-            sl.append(event_details::getEventName<SMSys::EventListT>(i));
+        for(int i=0; i!=SMSYS_TYPE::EventListT::AllEvents::size; i++)
+            sl.append(event_details::getEventName<SMSYS_TYPE::EventListT>(i));
 
         this->addEvents(sl);
     }
     {
         QStringList sl;
-        for(int i=0; i!=SMSys::numberOfStatesT::value; i++)
+        for(int i=0; i!=SMSYS_TYPE::numberOfStatesT::value; i++)
             sl.append(smsys->getStateById(i)->name());
 
         this->addStates(sl);
@@ -122,7 +122,14 @@ void SimuCtrl::addStates(QStringList sl) {
 }
 
 void SimuCtrl::addWidget(QWidget *w) {
+    //w->setParent();
+
     w->setParent(this->ui->widget);
+
+    if(w->layout()==0)
+        w->setLayout(new QHBoxLayout(this->ui->widget));
+
+    w->layout()->addWidget(w);
 }
 
 void SimuCtrl::setupPaused() {
@@ -136,6 +143,8 @@ void SimuCtrl::on_pb_run_clicked() {
         emit pause();
     }
     else {
+        this->ui->pte_log->appendPlainText(QString("<Run pushed>"));
+
         // is not running -> set to pause
         ui->pb_run->setText("pause");
         emit run();
@@ -169,9 +178,9 @@ void SimuCtrl::on_lw_event_itemSelectionChanged() {
     emit setPauseOnExitStates(this->pauseOnEvents);
 }
 
-void SimuCtrl::logEvent(QString log, bool lineEnd) {
+void SimuCtrl::logEvent(QString logStr, bool lineEnd) {
     if(!lineEnd) {
-        logLine += log;
+        logLine += logStr;
     }
     else {
         ui->pte_log->appendPlainText(logLine);

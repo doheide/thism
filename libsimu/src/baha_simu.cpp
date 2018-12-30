@@ -2,10 +2,12 @@
 #include <thism/baha_simu.h>
 #include <QString>
 #include <QTimerEvent>
+#include <QApplication>
 
 
 void BAHA_simu_log_impl::emitLogEvent(QString s, bool b) {
     emit logEvent(s, b);
+    QApplication::processEvents();
 }
 
 void BAHA_simu::log(const char *c) {
