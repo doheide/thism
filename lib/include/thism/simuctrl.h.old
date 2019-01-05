@@ -12,8 +12,8 @@
 #include <thism/sm2.h>
 //#include "sm2_sil.h"
 
-#include "baha_simu.h"
-#include "smsys.h"
+#include <thism/baha_simu.h>
+#include <smsys.h>
 
 
 

@@ -69,12 +69,18 @@ void LogBase::logNumberImpl(uint32_t n, uint8_t digits) {
 SystemBase::SystemBase(BAHA_TYPE *_baha) : baha(_baha), logf(baha), eventBuffer{} {
     eventBufferReadPos = 0;
     eventBufferWritePos = 0;
-#ifdef DO_SIMULATION
-    sicaba = 0;
-#endif
+
+    sysTime = 0;
+
+//#ifdef DO_SIMULATION
+//    sicaba = 0;
+//#endif
 }
 
 void SystemBase::processEvents() {
+    if(baha->pauseSysGet())
+        return;
+
     //BAHABase->logLine("processEvents(): ");
 
     // @todo add special treatment for E_Initial -> only process for sending state
@@ -92,23 +98,23 @@ void SystemBase::processEvents() {
                 if(isStateActiveBI(csi) && (stateLevels[csi]==level)) {
                     //BAHABase->logLine("active + level: ", (uint16_t) level, " ", StateIdT{csi}, " ", (uint8_t)csi);
 
+                    StateBase *sb = getStateById(csi);
+
                     for(uint16_t tii=0; tii!=transitionsNumberPerState[csi]; tii++) {
                         TransitionImpl *tics = &(transitions[csi][tii]);
 
                         if(cevent.event == tics->eventId) {
                             if(checkEventProtection(cevent, csi)) {
-                                StateBase *sb = getStateById(csi);
-
                                 uint16_t &cs = tics->stateId;
                                 //bahaBase->logLine("!! T1 ", EventIdT{tics->eventId}, ": ", StateIdT{csi}, " -> ", StateIdT{cs});
 
                                 executeTransition(csi, cs, cevent.sender, cevent.event, true);
-
-                                if(isStateActiveBI(csi))
-                                    sb->internalTransition(cevent.event, cevent.sender);
                             }
                         }
                     }
+
+                    if(isStateActiveBI(csi))
+                        sb->internalTransition(cevent.event, cevent.sender);
         }
 
 //        for(; eventBufferReadPos != readUntil; eventBufferReadPos=(eventBufferReadPos+1)&((1<<EVENT_BUFFER_SIZE_V)-1)) {
@@ -164,7 +170,8 @@ bool SystemBase::checkEventProtection(sys_detail::EventBuffer &cevent, uint16_t 
 //    else if((cevent.event==ID_E_Timer) && (cevent.sender!=cStateId))
 //        return false;
 //    return true;
-
+    if(eventOpts[cevent.event]==0)
+        return true;
     if((eventOpts[cevent.event] & EOPT_ONLY_FROM_SELF) && (cevent.sender==cStateId))
         return true;
     if(eventOpts[cevent.event] & EOPT_ONLY_FROM_SELF_OR_PARENT) {
@@ -207,7 +214,7 @@ uint16_t SystemBase::getParentIdBI(uint16_t cstate) {
 }
 
 void SystemBase::sysTickCallback() {
-    if(baha->pauseSysTickGet())
+    if(baha->pauseSysGet())
         return;
 
     sysTime++;
@@ -215,7 +222,7 @@ void SystemBase::sysTickCallback() {
     for(uint16_t i=0; i!=timerNum; i++) {
         if(timerCounter[i]==1) {
             raiseEventIdByIds(timerEvents[i], timerInitiator[i]);
-            timerCounter = timerCounterRepeat;
+            timerCounter[i] = timerCounterRepeat[i];
         }
         else if(timerCounter[i]>0)
            timerCounter[i]--;
@@ -225,17 +232,17 @@ void SystemBase::sysTickCallback() {
 void SystemBase::raiseEventIdByIds(uint16_t eventId, uint16_t senderStateId) {
     logf.logLine("!! R ", EventIdT{eventId}, " | ", StateIdT{senderStateId});
 
-#ifdef DO_SIMULATION
-    if(sicaba)
-        sicaba->onRaiseEvent(eventId);
-#endif
+//#ifdef DO_SIMULATION
+//    if(sicaba)
+//        sicaba->onRaiseEvent(eventId);
+//#endif
 
     eventBuffer[eventBufferWritePos++] = { eventId, senderStateId };
     eventBufferWritePos &= (1<<EVENT_BUFFER_SIZE_V) - 1;
 }
 
 void SystemBase::executeTransition(uint16_t startState, uint16_t destState, uint16_t senderState, uint16_t event, bool blockActivatedStates) {
-    if(!isStateActiveBI(startState) || isStateActiveBI(destState) ) {
+    if(!isStateActiveBI(startState)) {
         // @todo Add error message
 
         raiseEventIdByIds(ID_E_FatalError, senderState);
@@ -264,7 +271,7 @@ void SystemBase::executeTransition(uint16_t startState, uint16_t destState, uint
     } while(i!=numberOfStates);
 
     // make list of states to disable
-    while( (lastActiveChild!=0) && (lastActiveChild!=commonState) ) {
+    while( (lastActiveChild!=ID_S_Undefined) && (lastActiveChild!=commonState) ) {
         deactivateStateFullById(lastActiveChild);
         lastActiveChild = getParentIdBI(lastActiveChild);
     }
@@ -273,34 +280,37 @@ void SystemBase::executeTransition(uint16_t startState, uint16_t destState, uint
     activateStateAndParentsByIds(destState, senderState, blockActivatedStates);
 }
 
-void SystemBase::activateStateFullByIds(uint16_t curStateId, uint16_t destStateId, uint16_t senderStateId, bool blockActivatedStates) {
+void SystemBase::activateStateFullByIds(uint16_t curStateId, uint16_t destStateId, uint16_t senderStateId,
+                                        bool blockActivatedStates, bool initMode) {
 
-    logf.logLine("!! EN ", StateIdT{curStateId});
+//#ifdef DO_SIMULATION
+//    if(sicaba)
+//        sicaba->onActivateState(curStateId);
+//#endif
 
-#ifdef DO_SIMULATION
-    if(sicaba)
-        sicaba->onActivateState(curStateId);
-#endif
+    if(!isStateActiveBI(curStateId) || initMode) {
+        logf.logLine("!! EN ", StateIdT{curStateId});
 
-    isStateActiveSetBI(curStateId, true);
-    isStateBlockedSetBI(curStateId, blockActivatedStates);
+        isStateActiveSetBI(curStateId, true);
+        isStateBlockedSetBI(curStateId, blockActivatedStates);
 
-    bool isDestState = curStateId == destStateId;
+        bool isDestState = curStateId == destStateId;
 
-    getStateById(curStateId)->onEnter(senderStateId, isDestState);
+        getStateById(curStateId)->onEnter(senderStateId, isDestState);
 
-    if(isDestState)
-        raiseEventIdByIds(ID_E_Initial, curStateId);
+        if(isDestState)
+            raiseEventIdByIds(ID_E_Initial, curStateId);
+    }
 }
 
 void SystemBase::deactivateStateFullById(uint16_t curStateId) {
 
     logf.logLine("!! EX ", StateIdT{curStateId});
 
-#ifdef DO_SIMULATION
-    if(sicaba)
-        sicaba->onDeactivateState(curStateId);
-#endif
+//#ifdef DO_SIMULATION
+//    if(sicaba)
+//        sicaba->onDeactivateState(curStateId);
+//#endif
 
     getStateById(curStateId)->onExit();
     isStateActiveSetBI(curStateId, false);
@@ -311,7 +321,7 @@ void SystemBase::deactivateStateFullById(uint16_t curStateId) {
     }
 }
 
-void SystemBase::activateStateAndParentsByIds(uint16_t destState, uint16_t senderState, bool blockActivatedStates) {
+void SystemBase::activateStateAndParentsByIds(uint16_t destState, uint16_t senderState, bool blockActivatedStates, bool initMode) {
     int counter = 0;
     uint16_t cstate = destState;
 
@@ -324,14 +334,14 @@ void SystemBase::activateStateAndParentsByIds(uint16_t destState, uint16_t sende
     // activate all states top down
     while(counter>0) {
         counter--;
-        activateStateFullByIds(stateListTemp[counter], destState, senderState, blockActivatedStates);
+        activateStateFullByIds(stateListTemp[counter], destState, senderState, blockActivatedStates, initMode);
     }
 }
 
 void SystemBase::initialSetup() {
     for(uint16_t i=0; i!=numberOfStates; i++)
         if(isStateActiveBI(i))
-            activateStateAndParentsByIds(i, SystemBase::ID_S_Undefined, false);
+            activateStateAndParentsByIds(i, SystemBase::ID_S_Undefined, false, true);
 }
 
 bool SystemBase::checkIfStateIsChildOfOrSame(uint16_t parentState, uint16_t childState)

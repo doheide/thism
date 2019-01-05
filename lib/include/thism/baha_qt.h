@@ -43,7 +43,7 @@ class BAHA_tick_impl : public QObject {
 
 public:
     BAHA_tick_impl(BAHA_Base *p) : parent(p) {
-        sysTick_timer.start(100, this);
+        sysTick_timer.start(10, this);
         eventloop_timer.start(1, this);
     }
 

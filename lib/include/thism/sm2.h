@@ -92,6 +92,10 @@ static_assert(false, "SM: If '__useDescription' is active '__useNames' have also
 
 // ******************************************************************
 // ******************************************************************
+#define V_UNUSED(x) (void)x;
+
+// ******************************************************************
+// ******************************************************************
 class SystemBase;
 
 struct EventIdT { uint16_t id; };
@@ -513,16 +517,18 @@ public:
 
     void sysTickCallback();
 
-#ifdef DO_SIMULATION
-    Simu_helper::SimuCallbacks *sicaba;
-    void setSimuCallbacks(Simu_helper::SimuCallbacks *_sicaba) {
-        this->sicaba = _sicaba;
-    }
-#endif
+//#ifdef DO_SIMULATION
+//    Simu_helper::SimuCallbacks *sicaba;
+//    void setSimuCallbacks(Simu_helper::SimuCallbacks *_sicaba) {
+//        this->sicaba = _sicaba;
+//    }
+//#endif
 
     uint32_t sysTimeGet() {
         return sysTime;
     }
+
+    void initialSetup();
 
 protected:
     virtual bool checkEventProtection(sys_detail::EventBuffer &cevent, uint16_t cStateId);
@@ -541,13 +547,12 @@ protected:
     void raiseEventIdByIds(uint16_t eventId, uint16_t senderStateId);
 
     void executeTransition(uint16_t startState, uint16_t destState, uint16_t senderState, uint16_t event, bool blockActivatedStates);
-    void activateStateFullByIds(uint16_t curStateId, uint16_t destStateId, uint16_t senderStateId, bool blockActivatedStates);
+    void activateStateFullByIds(uint16_t curStateId, uint16_t destStateId, uint16_t senderStateId, bool blockActivatedStates, bool initMode=false);
 
     void deactivateStateFullById(uint16_t curStateId);
 
-    void activateStateAndParentsByIds(uint16_t destState, uint16_t senderState, bool blockActivatedStates=true);
+    void activateStateAndParentsByIds(uint16_t destState, uint16_t senderState, bool blockActivatedStates=true, bool initMode=false);
 
-    void initialSetup();
 
     bool checkIfStateIsChildOfOrSame(uint16_t parentState, uint16_t childState);
 };
@@ -954,7 +959,7 @@ public:
         timerInitiator = smTimerList.timerInitiator;
         timerOwner = smTimerList.timerOwner;
 
-        initialSetup();
+        //initialSetup();
     }
     virtual ~SMSystem() { }
 
@@ -1048,7 +1053,7 @@ QString make_treeuml(SYS *sys) {
                 uint16_t pid = sys->getParentIdBI(cs);
 
                 QString nt = sys->getStateById(cs)->name();
-                QString s = QString("state %1 {\n").arg(nt);
+                QString s = QString("state \"%1 (%2)\" as %1 {\n").arg(nt).arg(cs);
                 QString cl;
                 foreach(cl, stateUML[cs].split("\n", QString::SkipEmptyParts)) {
                     s += QString("  %1\n").arg(cl);
@@ -1064,9 +1069,10 @@ QString make_treeuml(SYS *sys) {
                             else {
                                 s += QString("%1").arg(sys->getStateById(cs)->name());
                             }
-                            s+= QString(" --> %1: %2\n")
+                            s+= QString(" --> %1: %2 (%3)\n")
                                     .arg(sys->getStateById(trs[ct].stateId)->name())
-                                    .arg(event_details::getEventName<typename SYS::EventListT>(trs[ct].eventId));
+                                    .arg(event_details::getEventName<typename SYS::EventListT>(trs[ct].eventId))
+                                    .arg(trs[ct].eventId);
                         }
                 }
 

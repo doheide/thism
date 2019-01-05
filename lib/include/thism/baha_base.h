@@ -6,10 +6,10 @@ class SystemBase;
 class BAHA_Base {
 protected:
     SystemBase *sys;
-    bool pauseSysTick;
+    bool pauseSys;
 
 public:
-    BAHA_Base(SystemBase *_sys=0) : sys(_sys), pauseSysTick(false) { }
+    BAHA_Base(SystemBase *_sys=0) : sys(_sys), pauseSys(false) { }
     virtual ~BAHA_Base() { }
 
     void sysSet(SystemBase *_sys) {
@@ -19,18 +19,18 @@ public:
         return sys;
     }
 
-    void pauseSysTickSet(bool doPause) {
-        pauseSysTick = doPause;
+    void pauseSysSet(bool doPause) {
+        pauseSys = doPause;
     }
-    bool pauseSysTickGet() {
-        return pauseSysTick;
+    bool pauseSysGet() {
+        return pauseSys;
     }
 };
 
 class BAHA_Void : public BAHA_Base {
 protected:
     SystemBase *sys;
-    bool pauseSysTick;
+    bool pauseSys;
 
 public:
     BAHA_Void(SystemBase *_sys=0) : BAHA_Base(_sys) { }

@@ -14,9 +14,22 @@
 //#include "sm2_sil.h"
 
 #include "baha_simu.h"
-#include "smsys.h"
+//#include "smsys.h"
 
+// *****************************************************************
+#ifndef SMSYS_TYPE
+#  error SMSYS_TYPE not set.
+#endif
 
+#ifndef SMSYS_INCLUDE
+#  error SMSYS_INCLUDE not set.
+#endif
+
+#define STRINGIFY_sctrl(x) STRINGIFY_sctrl_(x)
+#define STRINGIFY_sctrl_(x) #x
+#include STRINGIFY_sctrl(SMSYS_INCLUDE)
+
+// *****************************************************************
 
 namespace simu_worker {
 
@@ -26,11 +39,12 @@ namespace simu_worker {
         bool isPause;
 
         // ***************
-        BAHA_simu *baha;
-        SMSys *smsys_inst;
+        BAHA_TYPE *baha;
+        SMSYS_TYPE *smsys_inst;
 
     public:
         WorkerBase();
+
         virtual ~WorkerBase();
 
         BAHA_simu *getBaha() {
@@ -41,7 +55,9 @@ namespace simu_worker {
         void paused();
 
     public slots:
-        void doWork();
+        void init();
+
+        void started();
 
         void pause();
         void run();
@@ -108,7 +124,7 @@ public slots:
     void on_lw_onExit_itemSelectionChanged();
     void on_lw_event_itemSelectionChanged();
 
-    void logEvent(QString log, bool lineEnd);
+    void logEvent(QString logStr, bool lineEnd);
 
 private:
     Ui::SimuCtrl *ui;
