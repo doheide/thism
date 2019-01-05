@@ -8,6 +8,8 @@ CONFIG += c++11
 DEFINES += DO_SIMULATION
 DEFINES += "BAHA_TYPE=BAHA_Void"
 DEFINES += "BAHA_INCLUDE=baha_base.h"
+DEFINES += "SMSYS_TYPE=SMSys"
+DEFINES += "SMSYS_INCLUDE=smsys.h"
 
 DEFINES += __make_treeuml
 

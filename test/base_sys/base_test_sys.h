@@ -42,7 +42,7 @@ struct EventList; MAKE_EVENT_LIST(EventList, E_Lala, E_Lili);
 
 // **********************************************************
 // Define state machine system and Timer
-typedef SMTimer<Collector<S_Tick, S_Tack>, 111> SMT_Std;
+typedef SMTimer<Collector<S_Tick, S_Tack>, E_Timer, 111> SMT_Std;
 typedef SMTimerListTmpl<EventList, SMT_Std> SMTimerList;
 
 typedef SMSystem<EventList, Collector<SM>, SMTimerList> SMSys;

@@ -910,6 +910,8 @@ public:
     using StateId = typename StateListT::template StateId<CSTATE>;
     template<typename CEVENT>
     using EventId = typename EventListT::template EventId<CEVENT>;
+    template<typename CTIMER>
+    using TimerId = typename SMTimerListT::template TimerId<CTIMER>;
 
     typedef std::integral_constant<uint16_t, StatesT::size> numberOfStatesT;
 

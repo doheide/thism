@@ -5,7 +5,7 @@
 
 template<typename TestSys>
 struct SMSys_Test : public TestSys {
-    SMSys_Test (const TestSys &osys) : TestSys(osys) {
+    SMSys_Test (BAHA_TYPE *_baha) : TestSys(_baha) {
     }
 
     void clearAllStateFlags() {
@@ -41,12 +41,12 @@ struct SMSys_Test : public TestSys {
         return this->eventBufferWritePos;
     }
 
-    uint16_t timerNumGet() { return timerNum; }
-    uint32_t *timerCounterGet() { return timerCounter; }
-    uint32_t *timerCounterRepeatGet() { return timerCounterRepeat; }
-    uint16_t *timerOwnerGet() { return timerOwner; }
-    uint16_t *timerInitiatorGet() { return timerInitiator; }
-    uint16_t *timerEventsGet() { return timerEvents; }
+    uint16_t timerNumGet() { return this->timerNum; }
+    uint32_t *timerCounterGet() { return this->timerCounter; }
+    uint32_t *timerCounterRepeatGet() { return this->timerCounterRepeat; }
+    uint16_t *timerOwnerGet() { return this->timerOwner; }
+    uint16_t *timerInitiatorGet() { return this->timerInitiator; }
+    uint16_t *timerEventsGet() { return this->timerEvents; }
 };
 
 
